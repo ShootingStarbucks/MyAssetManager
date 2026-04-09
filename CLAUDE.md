@@ -80,3 +80,61 @@ AUTH_SECRET="..."
 FINNHUB_API_KEY="..."       # https://finnhub.io/register (서버 전용, NEXT_PUBLIC_ 금지)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```
+
+## Git Flow 워크플로우
+
+모든 개발 작업은 Git Flow를 따른다. **작업 요청을 받으면 항상 브랜치부터 만들고, 완료 후 커밋·머지한다.**
+
+### 브랜치 구조
+
+| 브랜치 | 용도 |
+|--------|------|
+| `main` | 배포 가능한 안정 버전. 직접 커밋 금지. |
+| `develop` | 다음 릴리즈를 위한 통합 브랜치. 모든 작업의 베이스. |
+| `feature/*` | 새 기능. `develop`에서 분기 → `develop`으로 머지. |
+| `release/*` | 릴리즈 준비. `develop`에서 분기 → `main`+`develop`으로 머지 후 태그. |
+| `hotfix/*` | 긴급 수정. `main`에서 분기 → `main`+`develop`으로 머지. |
+
+### 기능 개발 절차 (가장 일반적인 케이스)
+
+```bash
+git checkout develop
+git checkout -b feature/<feature-name>
+# 작업 수행
+git add <files>
+git commit -m "<type>: <description>"
+git checkout develop
+git merge --no-ff feature/<feature-name> -m "feat: merge feature/<feature-name>"
+git branch -d feature/<feature-name>
+git push origin develop
+```
+
+### 커밋 메시지 규칙 (Conventional Commits)
+
+| 타입 | 용도 |
+|------|------|
+| `feat:` | 새 기능 |
+| `fix:` | 버그 수정 |
+| `refactor:` | 리팩토링 (기능 변화 없음) |
+| `chore:` | 빌드/설정/의존성 변경 |
+| `docs:` | 문서 수정 |
+| `style:` | 코드 포맷 (로직 변화 없음) |
+
+### 브랜치 네이밍 예시
+
+```
+feature/add-portfolio-chart
+feature/kr-stock-realtime
+fix/quote-rate-limit-handling
+hotfix/auth-session-expiry
+release/1.0.0
+```
+
+### Claude 자동 수행 규칙
+
+개발 요청 시 항상:
+1. `git status`로 현재 브랜치 확인
+2. `develop`에서 `feature/<작업명>` 브랜치 생성
+3. 작업 완료 후 논리적 단위로 커밋
+4. `develop`으로 `--no-ff` 머지 후 feature 브랜치 삭제
+5. `git push origin develop`으로 원격 동기화
