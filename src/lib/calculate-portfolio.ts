@@ -1,4 +1,5 @@
 import type { HoldingWithQuote, AllocationSlice, PortfolioSummary } from '@/types/portfolio.types';
+import type { ReturnPeriod, HistoricalPriceResult, PeriodReturn, PortfolioPeriodReturn } from '@/types/asset.types';
 
 // USD → KRW 환율 (실제 서비스에서는 환율 API 사용 권장)
 // 현재는 고정 환율 사용 (추후 실시간 환율로 대체 가능)
@@ -66,5 +67,92 @@ export function calculatePortfolioSummary(holdings: HoldingWithQuote[]): Portfol
     holdingsCount: holdings.length,
     allocations,
     currency: 'KRW',
+  };
+}
+
+export function getBaselineDate(period: ReturnPeriod, createdAt: string): string {
+  if (period === '전체') {
+    return createdAt.slice(0, 10); // "YYYY-MM-DD"
+  }
+  const days = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }[period];
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
+export function calculatePeriodReturn(
+  holding: HoldingWithQuote,
+  historicalResult: HistoricalPriceResult
+): PeriodReturn {
+  const currentPriceKRW = holding.quote
+    ? toKRW(holding.quote.price, holding.quote.currency) * holding.quantity
+    : 0;
+
+  if (historicalResult.price === null || historicalResult.currency === null) {
+    return {
+      ticker: holding.ticker,
+      currentPriceKRW,
+      baselinePriceKRW: null,
+      returnPercent: null,
+      returnKRW: null,
+    };
+  }
+
+  const baselinePriceKRW = toKRW(historicalResult.price, historicalResult.currency) * holding.quantity;
+  const returnKRW = currentPriceKRW - baselinePriceKRW;
+  const returnPercent = baselinePriceKRW !== 0 ? (returnKRW / baselinePriceKRW) * 100 : null;
+
+  return {
+    ticker: holding.ticker,
+    currentPriceKRW,
+    baselinePriceKRW,
+    returnPercent,
+    returnKRW,
+  };
+}
+
+export function calculatePortfolioPeriodReturn(
+  period: ReturnPeriod,
+  holdingsWithQuotes: HoldingWithQuote[],
+  historicalResults: HistoricalPriceResult[]
+): PortfolioPeriodReturn {
+  const resultMap = new Map(historicalResults.map((r) => [r.ticker, r]));
+
+  let totalCurrentValueKRW = 0;
+  let totalBaselineValueKRW = 0;
+  let hasAllBaselines = true;
+
+  for (const holding of holdingsWithQuotes) {
+    if (!holding.quote) continue;
+    const current = toKRW(holding.quote.price, holding.quote.currency) * holding.quantity;
+    totalCurrentValueKRW += current;
+
+    const hist = resultMap.get(holding.ticker);
+    if (!hist || hist.price === null || hist.currency === null) {
+      hasAllBaselines = false;
+    } else {
+      totalBaselineValueKRW += toKRW(hist.price, hist.currency) * holding.quantity;
+    }
+  }
+
+  if (!hasAllBaselines || totalBaselineValueKRW === 0) {
+    return {
+      period,
+      totalCurrentValueKRW,
+      totalBaselineValueKRW: null,
+      returnPercent: null,
+      returnKRW: null,
+    };
+  }
+
+  const returnKRW = totalCurrentValueKRW - totalBaselineValueKRW;
+  const returnPercent = (returnKRW / totalBaselineValueKRW) * 100;
+
+  return {
+    period,
+    totalCurrentValueKRW,
+    totalBaselineValueKRW,
+    returnPercent,
+    returnKRW,
   };
 }

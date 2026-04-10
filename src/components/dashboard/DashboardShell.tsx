@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, createContext } from 'react';
 import { signOut } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import { AddHoldingForm } from './AddHoldingForm';
@@ -7,11 +8,19 @@ import { PortfolioSummaryCard } from './PortfolioSummaryCard';
 import { PortfolioTable } from './PortfolioTable';
 import { AllocationChart } from './AllocationChart';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import type { ReturnPeriod } from '@/types/asset.types';
+
+export const PeriodContext = createContext<{
+  period: ReturnPeriod;
+  setPeriod: (p: ReturnPeriod) => void;
+}>({ period: '1M', setPeriod: () => {} });
 
 export function DashboardShell() {
   const { data: session } = useSession();
+  const [period, setPeriod] = useState<ReturnPeriod>('1M');
 
   return (
+    <PeriodContext.Provider value={{ period, setPeriod }}>
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <header className="bg-white border-b border-gray-200">
@@ -67,5 +76,6 @@ export function DashboardShell() {
         </div>
       </main>
     </div>
+    </PeriodContext.Provider>
   );
 }
