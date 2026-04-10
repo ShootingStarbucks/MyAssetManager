@@ -4,45 +4,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 You are the orchestrator. Subagents execute. Never build, verify, or code inline. Your job is to plan, prioritize & coordinate.
 
+## Language Policy
+
+- **CLAUDE.md must be written in English only.** Never write Korean in this file.
+- Whenever CLAUDE.md is created or updated, sync the full Korean translation to `CLAUDE_ko.md` immediately after.
+
 @AGENTS.md
 
 ## Git Flow
 
-**브랜치 전략** — 모든 작업은 아래 규칙을 따른다.
+**Branch strategy** — all work must follow these rules.
 
-| 브랜치 | 용도 | 분기 출처 | 병합 대상 |
-|--------|------|-----------|-----------|
-| `main` | 프로덕션 배포 | — | — |
-| `develop` | 통합 브랜치 | `main` | `main` (릴리즈 시) |
-| `feature/<name>` | 신규 기능 | `develop` | `develop` |
-| `fix/<name>` | 버그 수정 | `develop` | `develop` |
-| `hotfix/<name>` | 긴급 패치 | `main` | `main` + `develop` |
-| `release/<version>` | 릴리즈 준비 | `develop` | `main` + `develop` |
+| Branch | Purpose | Branch from | Merge into |
+|--------|---------|-------------|------------|
+| `main` | Production deploy | — | — |
+| `develop` | Integration branch | `main` | `main` (on release) |
+| `feature/<name>` | New features | `develop` | `develop` |
+| `fix/<name>` | Bug fixes | `develop` | `develop` |
+| `hotfix/<name>` | Urgent patches | `main` | `main` + `develop` |
+| `release/<version>` | Release preparation | `develop` | `main` + `develop` |
 
-**필수 규칙:**
-- `main`, `develop`에 직접 커밋 금지. 반드시 브랜치 생성 후 PR로 병합
-- 브랜치명: `feature/add-login`, `fix/quote-cache`, `hotfix/auth-crash` 형식
-- 새 작업 시작 전 항상 `develop`을 최신 상태로 pull
+**Mandatory rules:**
+- Never commit directly to `main` or `develop`. Always create a branch and merge via PR.
+- Branch naming: `feature/add-login`, `fix/quote-cache`, `hotfix/auth-crash`
+- Always pull latest `develop` before starting new work.
 
-**커밋 메시지** — Conventional Commits 형식 준수:
+**Feature development flow (most common case):**
+```bash
+git checkout develop && git pull origin develop
+git checkout -b feature/<name>
+# do work
+git add <files>
+git commit -m "<type>(<scope>): <description>"
+git checkout develop
+git merge --no-ff feature/<name> -m "feat: merge feature/<name>"
+git branch -d feature/<name>
+git push origin develop
+```
+
+**Commit message format** — Conventional Commits:
 ```
 <type>(<scope>): <subject>
 
-feat(auth): 소셜 로그인 추가
-fix(holdings): 중복 ticker 검증 오류 수정
-test(quotes): quotes API 테스트 추가
-chore(deps): zod 버전 업데이트
-refactor(portfolio): 수익률 계산 로직 분리
+feat(auth): add social login
+fix(holdings): fix duplicate ticker validation
+test(quotes): add quotes API tests
+chore(deps): update zod version
+refactor(portfolio): extract return calculation logic
 ```
-타입: `feat` | `fix` | `test` | `chore` | `refactor` | `docs` | `style`
+Types: `feat` | `fix` | `test` | `chore` | `refactor` | `docs` | `style`
 
-**브랜치 생성 명령어:**
-```bash
-git checkout develop && git pull origin develop
-git checkout -b feature/<name>   # 기능 개발
-git checkout -b fix/<name>       # 버그 수정
-git checkout -b hotfix/<name> main  # 긴급 패치
-```
+**Claude auto-behavior on every dev request:**
+1. Run `git status` to check current branch
+2. Create `feature/<task>` branch from `develop`
+3. Commit in logical units after work is done
+4. Merge into `develop` with `--no-ff`, delete feature branch
+5. Push to remote with `git push origin develop`
 
 ## Commands
 
@@ -118,61 +135,3 @@ AUTH_SECRET="..."
 FINNHUB_API_KEY="..."       # https://finnhub.io/register (server-only, never NEXT_PUBLIC_)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```
-
-## Git Flow 워크플로우
-
-모든 개발 작업은 Git Flow를 따른다. **작업 요청을 받으면 항상 브랜치부터 만들고, 완료 후 커밋·머지한다.**
-
-### 브랜치 구조
-
-| 브랜치 | 용도 |
-|--------|------|
-| `main` | 배포 가능한 안정 버전. 직접 커밋 금지. |
-| `develop` | 다음 릴리즈를 위한 통합 브랜치. 모든 작업의 베이스. |
-| `feature/*` | 새 기능. `develop`에서 분기 → `develop`으로 머지. |
-| `release/*` | 릴리즈 준비. `develop`에서 분기 → `main`+`develop`으로 머지 후 태그. |
-| `hotfix/*` | 긴급 수정. `main`에서 분기 → `main`+`develop`으로 머지. |
-
-### 기능 개발 절차 (가장 일반적인 케이스)
-
-```bash
-git checkout develop
-git checkout -b feature/<feature-name>
-# 작업 수행
-git add <files>
-git commit -m "<type>: <description>"
-git checkout develop
-git merge --no-ff feature/<feature-name> -m "feat: merge feature/<feature-name>"
-git branch -d feature/<feature-name>
-git push origin develop
-```
-
-### 커밋 메시지 규칙 (Conventional Commits)
-
-| 타입 | 용도 |
-|------|------|
-| `feat:` | 새 기능 |
-| `fix:` | 버그 수정 |
-| `refactor:` | 리팩토링 (기능 변화 없음) |
-| `chore:` | 빌드/설정/의존성 변경 |
-| `docs:` | 문서 수정 |
-| `style:` | 코드 포맷 (로직 변화 없음) |
-
-### 브랜치 네이밍 예시
-
-```
-feature/add-portfolio-chart
-feature/kr-stock-realtime
-fix/quote-rate-limit-handling
-hotfix/auth-session-expiry
-release/1.0.0
-```
-
-### Claude 자동 수행 규칙
-
-개발 요청 시 항상:
-1. `git status`로 현재 브랜치 확인
-2. `develop`에서 `feature/<작업명>` 브랜치 생성
-3. 작업 완료 후 논리적 단위로 커밋
-4. `develop`으로 `--no-ff` 머지 후 feature 브랜치 삭제
-5. `git push origin develop`으로 원격 동기화
