@@ -83,10 +83,18 @@ export async function POST(req: NextRequest) {
       data: { userId: session.user.id, ticker, assetType, quantity, avgCost },
     });
     return NextResponse.json({ holding }, { status: 201 });
-  } catch {
+  } catch (e: unknown) {
+    // P2002: Unique constraint violation (같은 userId + ticker 조합)
+    if (e && typeof e === 'object' && 'code' in e && (e as { code: unknown }).code === 'P2002') {
+      return NextResponse.json(
+        { error: { code: 'UNKNOWN', message: '이미 등록된 티커입니다' } satisfies ApiError },
+        { status: 409 }
+      );
+    }
+    console.error('[POST /api/holdings] prisma.holding.create 실패:', e);
     return NextResponse.json(
-      { error: { code: 'UNKNOWN', message: '이미 등록된 티커입니다' } satisfies ApiError },
-      { status: 409 }
+      { error: { code: 'UNKNOWN', message: '자산 등록에 실패했습니다' } satisfies ApiError },
+      { status: 500 }
     );
   }
 }
