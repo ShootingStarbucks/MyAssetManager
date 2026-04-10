@@ -5,6 +5,7 @@ export interface Holding {
   ticker: string;
   assetType: AssetType;
   quantity: number;
+  avgCost?: number | null;
   createdAt: string;
 }
 
@@ -28,4 +29,5 @@ export interface PortfolioSummary {
   holdingsCount: number;
   allocations: AllocationSlice[];
   currency: 'KRW';
+  totalUnrealizedPnL: number | null;
 }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { ChangeBadge, AssetTypeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
-import { toKRW } from '@/lib/calculate-portfolio';
+import { toKRW, calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 import type { PeriodReturn } from '@/types/asset.types';
 
@@ -18,6 +18,8 @@ interface HoldingRowProps {
 export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodReturnLoading }: HoldingRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editQty, setEditQty] = useState(String(holding.quantity));
+  const [isEditingAvgCost, setIsEditingAvgCost] = useState(false);
+  const [editAvgCost, setEditAvgCost] = useState(holding.avgCost != null ? String(holding.avgCost) : '');
 
   const { mutate: remove, isPending: isRemoving } = useRemoveHolding();
   const { mutate: update, isPending: isUpdating } = useUpdateHolding();
@@ -25,6 +27,7 @@ export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodRetu
   const quote = holding.quote;
   const priceKRW = quote ? toKRW(quote.price, quote.currency) : null;
   const totalValue = priceKRW !== null ? priceKRW * holding.quantity : null;
+  const { unrealizedPnL, unrealizedPnLPercent } = calculateUnrealizedPnL(holding);
 
   function handleUpdateQty() {
     const qty = parseFloat(editQty);
@@ -32,6 +35,15 @@ export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodRetu
     update(
       { id: holding.id, quantity: qty },
       { onSuccess: () => setIsEditing(false) }
+    );
+  }
+
+  function handleUpdateAvgCost() {
+    const cost = editAvgCost === '' ? null : parseFloat(editAvgCost);
+    if (cost !== null && (isNaN(cost) || cost <= 0)) return;
+    update(
+      { id: holding.id, avgCost: cost },
+      { onSuccess: () => setIsEditingAvgCost(false) }
     );
   }
 
@@ -78,6 +90,45 @@ export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodRetu
           </button>
         )}
       </td>
+      {/* 평단가 */}
+      <td className="px-4 py-3 text-right">
+        {isEditingAvgCost ? (
+          <div className="flex items-center justify-end gap-1">
+            <input
+              type="number"
+              value={editAvgCost}
+              onChange={(e) => setEditAvgCost(e.target.value)}
+              className="w-24 px-2 py-1 border border-blue-300 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
+              min="0"
+              step="any"
+              placeholder={holding.quote?.currency === 'USD' ? 'USD' : '원'}
+            />
+            <button
+              onClick={handleUpdateAvgCost}
+              disabled={isUpdating}
+              className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              확인
+            </button>
+            <button
+              onClick={() => setIsEditingAvgCost(false)}
+              className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+            >
+              취소
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setIsEditingAvgCost(true); setEditAvgCost(holding.avgCost != null ? String(holding.avgCost) : ''); }}
+            className="text-sm text-gray-700 hover:text-blue-600 transition-colors"
+            title="클릭하여 평단가 수정"
+          >
+            {holding.avgCost != null
+              ? formatPrice(holding.avgCost, holding.quote?.currency ?? 'KRW')
+              : <span className="text-gray-300">—</span>}
+          </button>
+        )}
+      </td>
       <td className="px-4 py-3 text-right">
         {isQuoteLoading && !quote ? (
           <span className="text-gray-400 text-sm">조회 중...</span>
@@ -107,6 +158,23 @@ export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodRetu
           </span>
         ) : (
           <span className="text-gray-400">-</span>
+        )}
+      </td>
+      {/* 평가손익 */}
+      <td className="px-4 py-3 text-right">
+        {unrealizedPnL !== null ? (
+          <div>
+            <div className={`text-sm font-medium ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {unrealizedPnL >= 0 ? '+' : ''}{formatKRW(unrealizedPnL)}
+            </div>
+            {unrealizedPnLPercent !== null && (
+              <div className={`text-xs ${unrealizedPnLPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {unrealizedPnLPercent >= 0 ? '+' : ''}{unrealizedPnLPercent.toFixed(2)}%
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className="text-gray-300">—</span>
         )}
       </td>
       <td className="px-4 py-3 text-right">

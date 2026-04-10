@@ -30,6 +30,21 @@ export function calculateTotalValue(holdings: HoldingWithQuote[]): number {
   }, 0);
 }
 
+export function calculateUnrealizedPnL(holding: HoldingWithQuote): {
+  unrealizedPnL: number | null;
+  unrealizedPnLPercent: number | null;
+  avgCostKRW: number | null;
+} {
+  if (holding.avgCost == null || holding.quote == null) {
+    return { unrealizedPnL: null, unrealizedPnLPercent: null, avgCostKRW: null };
+  }
+  const avgCostKRW = toKRW(holding.avgCost, holding.quote.currency);
+  const currentPriceKRW = toKRW(holding.quote.price, holding.quote.currency);
+  const unrealizedPnL = (currentPriceKRW - avgCostKRW) * holding.quantity;
+  const unrealizedPnLPercent = ((currentPriceKRW - avgCostKRW) / avgCostKRW) * 100;
+  return { unrealizedPnL, unrealizedPnLPercent, avgCostKRW };
+}
+
 export function calculatePortfolioSummary(holdings: HoldingWithQuote[]): PortfolioSummary {
   const validHoldings = holdings.filter((h) => h.quote !== null);
 
@@ -60,6 +75,15 @@ export function calculatePortfolioSummary(holdings: HoldingWithQuote[]): Portfol
     };
   });
 
+  const holdingsWithAvgCost = validHoldings.filter(h => h.avgCost != null);
+  let totalUnrealizedPnL: number | null = null;
+  if (holdingsWithAvgCost.length > 0) {
+    totalUnrealizedPnL = holdingsWithAvgCost.reduce((sum, h) => {
+      const { unrealizedPnL } = calculateUnrealizedPnL(h);
+      return sum + (unrealizedPnL ?? 0);
+    }, 0);
+  }
+
   return {
     totalValue,
     totalChange,
@@ -67,6 +91,7 @@ export function calculatePortfolioSummary(holdings: HoldingWithQuote[]): Portfol
     holdingsCount: holdings.length,
     allocations,
     currency: 'KRW',
+    totalUnrealizedPnL,
   };
 }
 

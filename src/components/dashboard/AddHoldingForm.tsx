@@ -16,6 +16,7 @@ export function AddHoldingForm() {
   const [assetType, setAssetType] = useState<AssetType>('us-stock');
   const [ticker, setTicker] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [avgCost, setAvgCost] = useState('');
   const [formError, setFormError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -31,6 +32,7 @@ export function AddHoldingForm() {
     setSearchQuery('');
     setShowDropdown(false);
     setFormError('');
+    setAvgCost('');
   }
 
   function handleTickerChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -55,10 +57,16 @@ export function AddHoldingForm() {
     if (!ticker.trim()) { setFormError('티커를 입력하세요'); return; }
     if (isNaN(qty) || qty <= 0) { setFormError('수량은 0보다 커야 합니다'); return; }
 
+    const avgCostNum = avgCost ? parseFloat(avgCost) : undefined;
+    if (avgCost && (isNaN(avgCostNum!) || avgCostNum! <= 0)) {
+      setFormError('평단가는 0보다 커야 합니다');
+      return;
+    }
+
     addHolding(
-      { ticker: ticker.trim().toUpperCase(), assetType, quantity: qty },
+      { ticker: ticker.trim().toUpperCase(), assetType, quantity: qty, avgCost: avgCostNum },
       {
-        onSuccess: () => { setTicker(''); setQuantity(''); setSearchQuery(''); },
+        onSuccess: () => { setTicker(''); setQuantity(''); setAvgCost(''); setSearchQuery(''); },
         onError: (err) => setFormError(err.message),
       }
     );
@@ -133,6 +141,18 @@ export function AddHoldingForm() {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={avgCost}
+          onChange={(e) => setAvgCost(e.target.value)}
+          placeholder={`평단가 (${assetType === 'us-stock' ? 'USD' : '원'}, 선택)`}
+          min="0"
+          step="any"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
       </div>
 
       {formError && (
