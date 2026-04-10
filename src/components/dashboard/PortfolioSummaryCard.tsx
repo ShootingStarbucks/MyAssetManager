@@ -85,6 +85,19 @@ export function PortfolioSummaryCard() {
               )}
             </div>
 
+            {/* 평가손익 */}
+            {summary.totalUnrealizedPnL !== null && (
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-gray-500">평가손익</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-medium ${summary.totalUnrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summary.totalUnrealizedPnL >= 0 ? '+' : ''}
+                    {summary.totalUnrealizedPnL.toLocaleString('ko-KR')}원
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 mb-3">
               <ChangeBadge value={summary.totalChange} suffix="원" />
               <ChangeBadge value={summary.totalChangePercent} />

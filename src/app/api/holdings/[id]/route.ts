@@ -5,7 +5,10 @@ import { prisma } from '@/lib/prisma';
 import type { ApiError } from '@/types/api.types';
 
 const updateSchema = z.object({
-  quantity: z.number().positive('수량은 0보다 커야 합니다'),
+  quantity: z.number().positive('수량은 0보다 커야 합니다').optional(),
+  avgCost: z.number().positive().nullable().optional(),
+}).refine(data => data.quantity !== undefined || 'avgCost' in data, {
+  message: '수정할 항목이 없습니다',
 });
 
 export async function PATCH(
@@ -38,9 +41,13 @@ export async function PATCH(
     );
   }
 
+  const updateData: { quantity?: number; avgCost?: number | null } = {};
+  if (parsed.data.quantity !== undefined) updateData.quantity = parsed.data.quantity;
+  if ('avgCost' in parsed.data) updateData.avgCost = parsed.data.avgCost;
+
   const updated = await prisma.holding.update({
     where: { id },
-    data: { quantity: parsed.data.quantity },
+    data: updateData,
   });
 
   return NextResponse.json({ holding: updated });

@@ -11,7 +11,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 function SkeletonRow() {
   return (
     <tr className="border-b border-gray-100">
-      {[1,2,3,4,5,6].map((i) => (
+      {[1,2,3,4,5,6,7,8].map((i) => (
         <td key={i} className="px-4 py-3">
           <div className="h-4 bg-gray-200 rounded animate-pulse" />
         </td>
@@ -53,8 +53,10 @@ export function PortfolioTable() {
           <tr className="border-b border-gray-200 bg-gray-50">
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">자산</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">수량</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">평단가</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">현재가</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">등락률 ({period})</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">평가손익</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">평가액</th>
             <th className="px-4 py-3" />
           </tr>

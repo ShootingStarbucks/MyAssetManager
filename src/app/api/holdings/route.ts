@@ -13,6 +13,7 @@ const addHoldingSchema = z.object({
   ticker: z.string().min(1).max(20).transform((v: string) => v.toUpperCase().trim()),
   assetType: z.enum(['us-stock', 'kr-stock', 'crypto']),
   quantity: z.number().positive('수량은 0보다 커야 합니다'),
+  avgCost: z.number().positive().optional(),
 });
 
 export async function GET() {
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { ticker, assetType, quantity } = parsed.data;
+  const { ticker, assetType, quantity, avgCost } = parsed.data;
 
   // 최대 보유 자산 수 제한
   const count = await prisma.holding.count({ where: { userId: session.user.id } });
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const holding = await prisma.holding.create({
-      data: { userId: session.user.id, ticker, assetType, quantity },
+      data: { userId: session.user.id, ticker, assetType, quantity, avgCost },
     });
     return NextResponse.json({ holding }, { status: 201 });
   } catch {
