@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useAddHolding } from '@/hooks/use-holdings';
+import { useTickerSearch } from '@/hooks/use-ticker-search';
+import { Spinner } from '@/components/ui/Spinner';
 import type { AssetType } from '@/types/asset.types';
 
 const ASSET_TYPES: { value: AssetType; label: string; placeholder: string; hint: string }[] = [
@@ -15,10 +17,35 @@ export function AddHoldingForm() {
   const [ticker, setTicker] = useState('');
   const [quantity, setQuantity] = useState('');
   const [formError, setFormError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const { mutate: addHolding, isPending } = useAddHolding();
+  const { data: searchResults, isFetching: isSearching } = useTickerSearch(searchQuery, assetType);
 
   const currentType = ASSET_TYPES.find((t) => t.value === assetType)!;
+
+  function handleAssetTypeChange(type: AssetType) {
+    setAssetType(type);
+    setTicker('');
+    setSearchQuery('');
+    setShowDropdown(false);
+    setFormError('');
+  }
+
+  function handleTickerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value.toUpperCase();
+    setTicker(v);
+    setSearchQuery(v);
+    setShowDropdown(true);
+  }
+
+  function handleSelectResult(selectedTicker: string) {
+    setTicker(selectedTicker);
+    setSearchQuery('');
+    setShowDropdown(false);
+    setFormError('');
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,11 +58,13 @@ export function AddHoldingForm() {
     addHolding(
       { ticker: ticker.trim().toUpperCase(), assetType, quantity: qty },
       {
-        onSuccess: () => { setTicker(''); setQuantity(''); },
+        onSuccess: () => { setTicker(''); setQuantity(''); setSearchQuery(''); },
         onError: (err) => setFormError(err.message),
       }
     );
   }
+
+  const hasDropdown = showDropdown && searchResults && searchResults.length > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -45,7 +74,7 @@ export function AddHoldingForm() {
           <button
             key={type.value}
             type="button"
-            onClick={() => { setAssetType(type.value); setTicker(''); setFormError(''); }}
+            onClick={() => handleAssetTypeChange(type.value)}
             className={`flex-1 py-2 text-sm font-medium transition-colors ${
               assetType === type.value
                 ? 'bg-blue-600 text-white'
@@ -58,16 +87,41 @@ export function AddHoldingForm() {
       </div>
 
       <div className="flex gap-2">
-        <div className="flex-1">
+        {/* 티커 입력 + 자동완성 드롭다운 */}
+        <div className="relative flex-1">
           <input
             type="text"
             value={ticker}
-            onChange={(e) => setTicker(e.target.value.toUpperCase())}
+            onChange={handleTickerChange}
+            onFocus={() => { if (ticker) setShowDropdown(true); }}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             placeholder={currentType.placeholder}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+          {isSearching && (
+            <div className="absolute right-2 top-2.5">
+              <Spinner size="sm" />
+            </div>
+          )}
+          {hasDropdown && (
+            <ul className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {searchResults.map((r) => (
+                <li key={r.ticker}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); handleSelectResult(r.ticker); }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm flex items-center gap-2"
+                  >
+                    <span className="font-medium text-gray-900">{r.ticker}</span>
+                    <span className="text-gray-500 text-xs truncate">{r.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="mt-1 text-xs text-gray-400">{currentType.hint}</p>
         </div>
+
         <div className="w-28">
           <input
             type="number"
@@ -90,7 +144,7 @@ export function AddHoldingForm() {
         disabled={isPending}
         className="w-full py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {isPending ? '추가 중...' : '자산 추가'}
+        {isPending ? '확인 중...' : '자산 추가'}
       </button>
     </form>
   );

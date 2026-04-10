@@ -1,4 +1,5 @@
 import type { NormalizedQuote, HistoricalPrice } from '@/types/asset.types';
+import type { SearchResult } from '@/types/api.types';
 
 // BTC → bitcoin 등 CoinGecko ID 매핑 (주요 코인)
 const TICKER_TO_COINGECKO_ID: Record<string, string> = {
@@ -97,4 +98,22 @@ export async function fetchCryptoHistoricalPrice(
   if (price == null) throw Object.assign(new Error('No data'), { code: 'NO_DATA' });
 
   return { ticker, price, currency: 'KRW', date };
+}
+
+function capitalizeCoinId(id: string): string {
+  return id
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+export function searchCrypto(query: string): SearchResult[] {
+  const upper = query.toUpperCase();
+  return Object.entries(TICKER_TO_COINGECKO_ID)
+    .filter(
+      ([ticker, id]) =>
+        ticker.includes(upper) || id.toUpperCase().includes(upper)
+    )
+    .slice(0, 8)
+    .map(([ticker, id]) => ({ ticker, name: capitalizeCoinId(id) }));
 }
