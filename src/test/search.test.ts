@@ -86,7 +86,7 @@ describe('GET /api/search', () => {
   it('6. crypto → searchCrypto 호출 후 결과 반환', async () => {
     mockAuth.mockResolvedValue(AUTHED_SESSION)
     const results = [{ ticker: 'BTC', name: 'Bitcoin' }]
-    mockSearchCrypto.mockReturnValue(results)
+    mockSearchCrypto.mockResolvedValue(results)
 
     const res = await GET(makeGetRequest('BTC', 'crypto'))
     expect(res.status).toBe(200)

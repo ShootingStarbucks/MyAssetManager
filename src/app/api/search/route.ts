@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     } else if (assetType === 'kr-stock') {
       results = await searchKrStocks(q);
     } else {
-      results = searchCrypto(q);
+      results = await searchCrypto(q);
     }
   } catch {
     results = [];
