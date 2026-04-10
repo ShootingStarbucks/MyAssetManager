@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { fetchUsStockQuote } from '@/lib/finnhub-client';
+import { fetchKrStockQuote } from '@/lib/yahoo-finance-client';
+import { fetchCryptoQuotes } from '@/lib/coingecko-client';
 import type { ApiError } from '@/types/api.types';
 
 const MAX_HOLDINGS = 20;
@@ -56,6 +59,22 @@ export async function POST(req: NextRequest) {
       { error: { code: 'UNKNOWN', message: `최대 ${MAX_HOLDINGS}개까지 등록할 수 있습니다` } satisfies ApiError },
       { status: 422 }
     );
+  }
+
+  // 티커 유효성 검증 (외부 API 호출)
+  try {
+    if (assetType === 'us-stock') await fetchUsStockQuote(ticker);
+    else if (assetType === 'kr-stock') await fetchKrStockQuote(ticker);
+    else await fetchCryptoQuotes([ticker]);
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === 'INVALID_TICKER') {
+      return NextResponse.json(
+        { error: { code: 'INVALID_TICKER', message: '존재하지 않는 종목 코드입니다.' } satisfies ApiError },
+        { status: 422 }
+      );
+    }
+    // NETWORK_ERROR / RATE_LIMITED: 검증 불가 상태이므로 저장 허용
   }
 
   try {

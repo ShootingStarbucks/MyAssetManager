@@ -1,5 +1,6 @@
 import yahooFinance from 'yahoo-finance2';
 import type { NormalizedQuote, HistoricalPrice } from '@/types/asset.types';
+import type { SearchResult } from '@/types/api.types';
 
 interface HistoricalRow {
   date: Date;
@@ -69,4 +70,22 @@ export async function fetchKrStockHistoricalPrice(
     }
   }
   throw Object.assign(new Error('No historical data'), { code: 'NO_DATA' });
+}
+
+export async function searchKrStocks(query: string): Promise<SearchResult[]> {
+  try {
+    const result = await (yahooFinance as unknown as {
+      search: (q: string) => Promise<{ quotes: Array<{ symbol?: string; shortname?: string; longname?: string }> }>;
+    }).search(query);
+
+    return (result.quotes ?? [])
+      .filter((q) => q.symbol && (q.symbol.endsWith('.KS') || q.symbol.endsWith('.KQ')))
+      .slice(0, 8)
+      .map((q) => ({
+        ticker: q.symbol!.replace(/\.(KS|KQ)$/, ''),
+        name: q.shortname ?? q.longname ?? q.symbol!,
+      }));
+  } catch {
+    return [];
+  }
 }

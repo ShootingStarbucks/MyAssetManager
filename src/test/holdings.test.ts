@@ -15,9 +15,24 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
+vi.mock('@/lib/finnhub-client', () => ({
+  fetchUsStockQuote: vi.fn(),
+}))
+
+vi.mock('@/lib/yahoo-finance-client', () => ({
+  fetchKrStockQuote: vi.fn(),
+}))
+
+vi.mock('@/lib/coingecko-client', () => ({
+  fetchCryptoQuotes: vi.fn(),
+}))
+
 import { GET, POST } from '@/app/api/holdings/route'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { fetchUsStockQuote } from '@/lib/finnhub-client'
+import { fetchKrStockQuote } from '@/lib/yahoo-finance-client'
+import { fetchCryptoQuotes } from '@/lib/coingecko-client'
 
 const mockAuth = auth as ReturnType<typeof vi.fn>
 const mockHolding = prisma.holding as {
@@ -25,6 +40,9 @@ const mockHolding = prisma.holding as {
   count: ReturnType<typeof vi.fn>
   create: ReturnType<typeof vi.fn>
 }
+const mockFetchUsStock = fetchUsStockQuote as ReturnType<typeof vi.fn>
+const mockFetchKrStock = fetchKrStockQuote as ReturnType<typeof vi.fn>
+const mockFetchCrypto = fetchCryptoQuotes as ReturnType<typeof vi.fn>
 
 const AUTHED_SESSION = { user: { id: 'user-1', email: 'test@example.com' } }
 
@@ -73,7 +91,13 @@ describe('GET /api/holdings', () => {
 })
 
 describe('POST /api/holdings', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // 기본: 유효성 검증 통과 (유효한 티커)
+    mockFetchUsStock.mockResolvedValue({ ticker: 'AAPL', price: 150, change: 0, changePercent: 0, currency: 'USD', assetType: 'us-stock' })
+    mockFetchKrStock.mockResolvedValue({ ticker: '005930', price: 70000, change: 0, changePercent: 0, currency: 'KRW', assetType: 'kr-stock' })
+    mockFetchCrypto.mockResolvedValue([{ ticker: 'BTC', price: 50000, change: 0, changePercent: 0, currency: 'KRW', assetType: 'crypto' }])
+  })
 
   it('1. 비인증 요청 → 401', async () => {
     mockAuth.mockResolvedValue(null)
@@ -148,5 +172,47 @@ describe('POST /api/holdings', () => {
       makePostRequest({ ticker: 'A'.repeat(21), assetType: 'us-stock', quantity: 1 })
     )
     expect(res.status).toBe(400)
+  })
+
+  it('10. us-stock INVALID_TICKER → 422', async () => {
+    mockAuth.mockResolvedValue(AUTHED_SESSION)
+    mockHolding.count.mockResolvedValue(0)
+    mockFetchUsStock.mockRejectedValue(Object.assign(new Error('Invalid'), { code: 'INVALID_TICKER' }))
+
+    const res = await POST(makePostRequest({ ticker: 'XXXXXX', assetType: 'us-stock', quantity: 1 }))
+    expect(res.status).toBe(422)
+    const json = await res.json()
+    expect(json.error.code).toBe('INVALID_TICKER')
+  })
+
+  it('11. kr-stock INVALID_TICKER → 422', async () => {
+    mockAuth.mockResolvedValue(AUTHED_SESSION)
+    mockHolding.count.mockResolvedValue(0)
+    mockFetchKrStock.mockRejectedValue(Object.assign(new Error('Invalid'), { code: 'INVALID_TICKER' }))
+
+    const res = await POST(makePostRequest({ ticker: '999999', assetType: 'kr-stock', quantity: 1 }))
+    expect(res.status).toBe(422)
+    const json = await res.json()
+    expect(json.error.code).toBe('INVALID_TICKER')
+  })
+
+  it('12. crypto INVALID_TICKER → 422', async () => {
+    mockAuth.mockResolvedValue(AUTHED_SESSION)
+    mockHolding.count.mockResolvedValue(0)
+    mockFetchCrypto.mockRejectedValue(Object.assign(new Error('Invalid'), { code: 'INVALID_TICKER' }))
+
+    const res = await POST(makePostRequest({ ticker: 'FAKECOIN', assetType: 'crypto', quantity: 1 }))
+    expect(res.status).toBe(422)
+  })
+
+  it('13. NETWORK_ERROR 시 저장 허용 (graceful bypass)', async () => {
+    mockAuth.mockResolvedValue(AUTHED_SESSION)
+    mockHolding.count.mockResolvedValue(0)
+    mockFetchUsStock.mockRejectedValue(Object.assign(new Error('Network'), { code: 'NETWORK_ERROR' }))
+    const created = { id: 'h1', userId: 'user-1', ticker: 'AAPL', assetType: 'us-stock', quantity: 1 }
+    mockHolding.create.mockResolvedValue(created)
+
+    const res = await POST(makePostRequest({ ticker: 'AAPL', assetType: 'us-stock', quantity: 1 }))
+    expect(res.status).toBe(201)
   })
 })
