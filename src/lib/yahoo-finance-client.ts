@@ -1,4 +1,5 @@
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
+const yahooFinance = new YahooFinance();
 import type { NormalizedQuote, HistoricalPrice } from '@/types/asset.types';
 import type { SearchResult } from '@/types/api.types';
 
@@ -55,7 +56,7 @@ export async function fetchKrStockHistoricalPrice(
   for (const suffix of suffixes) {
     try {
       const symbol = `${ticker}${suffix}`;
-      const result = await (yahooFinance as unknown as { historical: (symbol: string, opts: object) => Promise<HistoricalRow[]> }).historical(symbol, {
+      const result = await yahooFinance.historical(symbol, {
         period1,
         period2,
         interval: '1d',
