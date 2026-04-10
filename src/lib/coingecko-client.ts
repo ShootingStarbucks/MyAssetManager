@@ -100,20 +100,17 @@ export async function fetchCryptoHistoricalPrice(
   return { ticker, price, currency: 'KRW', date };
 }
 
-function capitalizeCoinId(id: string): string {
-  return id
-    .split('-')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
+export async function searchCrypto(query: string): Promise<SearchResult[]> {
+  const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
 
-export function searchCrypto(query: string): SearchResult[] {
-  const upper = query.toUpperCase();
-  return Object.entries(TICKER_TO_COINGECKO_ID)
-    .filter(
-      ([ticker, id]) =>
-        ticker.includes(upper) || id.toUpperCase().includes(upper)
-    )
+  const data = await res.json();
+  const coins: Array<{ id: string; name: string; symbol: string; market_cap_rank: number | null }> =
+    data.coins ?? [];
+
+  return coins
+    .sort((a, b) => (a.market_cap_rank ?? 99999) - (b.market_cap_rank ?? 99999))
     .slice(0, 8)
-    .map(([ticker, id]) => ({ ticker, name: capitalizeCoinId(id) }));
+    .map((c) => ({ ticker: c.symbol.toUpperCase(), name: c.name }));
 }

@@ -74,11 +74,17 @@ export async function fetchKrStockHistoricalPrice(
 
 export async function searchKrStocks(query: string): Promise<SearchResult[]> {
   try {
-    const result = await (yahooFinance as unknown as {
-      search: (q: string) => Promise<{ quotes: Array<{ symbol?: string; shortname?: string; longname?: string }> }>;
-    }).search(query);
+    const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0&lang=ko-KR&region=KR`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (!res.ok) return [];
 
-    return (result.quotes ?? [])
+    const data = await res.json();
+    const quotes: Array<{ symbol?: string; shortname?: string; longname?: string }> =
+      data.quotes ?? [];
+
+    return quotes
       .filter((q) => q.symbol && (q.symbol.endsWith('.KS') || q.symbol.endsWith('.KQ')))
       .slice(0, 8)
       .map((q) => ({
