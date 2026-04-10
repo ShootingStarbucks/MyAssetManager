@@ -1,15 +1,21 @@
 'use client';
 
+import { useContext } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import { PeriodContext } from './DashboardShell';
+import { usePeriodReturns } from '@/hooks/use-period-returns';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ChangeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPercent } from '@/lib/format-currency';
 import { Spinner } from '@/components/ui/Spinner';
+import type { ReturnPeriod } from '@/types/asset.types';
 
 export function PortfolioSummaryCard() {
-  const { summary, isLoading, lastUpdatedAt } = usePortfolioSummary();
+  const { summary, holdings: holdingsWithQuotes, isLoading, lastUpdatedAt } = usePortfolioSummary();
   const queryClient = useQueryClient();
+  const { period, setPeriod } = useContext(PeriodContext);
+  const { portfolioPeriodReturn, isLoading: isPeriodLoading } = usePeriodReturns(holdingsWithQuotes, period);
 
   function handleRefresh() {
     queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -41,6 +47,44 @@ export function PortfolioSummaryCard() {
             <div className="text-3xl font-bold text-gray-900 mb-1">
               {formatKRW(summary.totalValue)}
             </div>
+            {/* 기간 선택 탭 */}
+            <div className="flex gap-1 mb-3">
+              {(['1M', '3M', '6M', '1Y', '전체'] as ReturnPeriod[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
+                    period === p
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* 기간 수익률 */}
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm text-gray-500">기간 수익 ({period})</span>
+              {isPeriodLoading ? (
+                <Spinner size="sm" />
+              ) : portfolioPeriodReturn?.returnPercent != null ? (
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-medium ${portfolioPeriodReturn.returnKRW! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {portfolioPeriodReturn.returnKRW! >= 0 ? '+' : ''}
+                    {portfolioPeriodReturn.returnKRW!.toLocaleString('ko-KR')}원
+                  </span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${portfolioPeriodReturn.returnPercent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {portfolioPeriodReturn.returnPercent >= 0 ? '+' : ''}
+                    {portfolioPeriodReturn.returnPercent.toFixed(2)}%
+                  </span>
+                </div>
+              ) : (
+                <span className="text-sm text-gray-400">-</span>
+              )}
+            </div>
+
             <div className="flex items-center gap-2 mb-3">
               <ChangeBadge value={summary.totalChange} suffix="원" />
               <ChangeBadge value={summary.totalChangePercent} />

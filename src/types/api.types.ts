@@ -25,3 +25,9 @@ export interface FinnhubQuoteResponse {
   pc: number;  // Previous close
   t: number;   // Timestamp
 }
+
+export interface HistoricalPriceRequestItem {
+  ticker: string;
+  assetType: import('./asset.types').AssetType;
+  date: string; // "YYYY-MM-DD"
+}

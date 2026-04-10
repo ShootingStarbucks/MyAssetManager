@@ -6,13 +6,16 @@ import { ChangeBadge, AssetTypeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
 import { toKRW } from '@/lib/calculate-portfolio';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
+import type { PeriodReturn } from '@/types/asset.types';
 
 interface HoldingRowProps {
   holding: HoldingWithQuote;
   isQuoteLoading: boolean;
+  periodReturn?: PeriodReturn | null;
+  isPeriodReturnLoading?: boolean;
 }
 
-export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
+export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodReturnLoading }: HoldingRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editQty, setEditQty] = useState(String(holding.quantity));
 
@@ -92,10 +95,18 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
         )}
       </td>
       <td className="px-4 py-3 text-right">
-        {quote ? (
-          <ChangeBadge value={quote.changePercent} />
+        {isPeriodReturnLoading ? (
+          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+        ) : periodReturn?.returnPercent != null ? (
+          <span className={`text-sm font-medium ${periodReturn.returnPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {periodReturn.returnPercent >= 0 ? '+' : ''}{periodReturn.returnPercent.toFixed(2)}%
+          </span>
+        ) : holding.quote ? (
+          <span className={`text-sm font-medium ${holding.quote.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {holding.quote.changePercent >= 0 ? '+' : ''}{holding.quote.changePercent.toFixed(2)}%
+          </span>
         ) : (
-          <span className="text-gray-300">-</span>
+          <span className="text-gray-400">-</span>
         )}
       </td>
       <td className="px-4 py-3 text-right">

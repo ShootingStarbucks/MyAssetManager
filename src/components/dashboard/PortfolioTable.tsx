@@ -1,6 +1,9 @@
 'use client';
 
+import { useContext } from 'react';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import { PeriodContext } from './DashboardShell';
+import { usePeriodReturns } from '@/hooks/use-period-returns';
 import { HoldingRow } from './HoldingRow';
 import { Spinner } from '@/components/ui/Spinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -19,6 +22,8 @@ function SkeletonRow() {
 
 export function PortfolioTable() {
   const { holdings, isLoading, isError } = usePortfolioSummary();
+  const { period } = useContext(PeriodContext);
+  const { periodReturns, isLoading: isPeriodLoading } = usePeriodReturns(holdings, period);
 
   if (isLoading && holdings.length === 0) {
     return (
@@ -49,7 +54,7 @@ export function PortfolioTable() {
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">자산</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">수량</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">현재가</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">등락률</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">등락률 ({period})</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">평가액</th>
             <th className="px-4 py-3" />
           </tr>
@@ -58,7 +63,13 @@ export function PortfolioTable() {
           {isLoading
             ? Array(3).fill(null).map((_, i) => <SkeletonRow key={i} />)
             : holdings.map((h) => (
-                <HoldingRow key={h.id} holding={h} isQuoteLoading={isLoading} />
+                <HoldingRow
+                  key={h.id}
+                  holding={h}
+                  isQuoteLoading={isLoading}
+                  periodReturn={periodReturns.find((r) => r.ticker === h.ticker) ?? null}
+                  isPeriodReturnLoading={isPeriodLoading}
+                />
               ))}
         </tbody>
       </table>

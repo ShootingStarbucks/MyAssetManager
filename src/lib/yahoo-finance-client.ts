@@ -1,5 +1,11 @@
 import yahooFinance from 'yahoo-finance2';
-import type { NormalizedQuote } from '@/types/asset.types';
+import type { NormalizedQuote, HistoricalPrice } from '@/types/asset.types';
+
+interface HistoricalRow {
+  date: Date;
+  close: number;
+  [key: string]: unknown;
+}
 
 export async function fetchKrStockQuote(ticker: string): Promise<NormalizedQuote> {
   // 한국 주식: 종목코드 6자리 → .KS (KOSPI) 또는 .KQ (KOSDAQ) 시도
@@ -35,4 +41,32 @@ export async function fetchKrStockQuote(ticker: string): Promise<NormalizedQuote
   const err = new Error(`유효하지 않은 한국 주식 종목코드: ${ticker}`);
   (err as NodeJS.ErrnoException).code = 'INVALID_TICKER';
   throw lastError ?? err;
+}
+
+export async function fetchKrStockHistoricalPrice(
+  ticker: string,
+  date: string, // "YYYY-MM-DD"
+): Promise<HistoricalPrice> {
+  const period1 = new Date(date + 'T00:00:00Z');
+  const period2 = new Date(period1.getTime() + 4 * 86400 * 1000); // +4 days
+
+  const suffixes = ['.KS', '.KQ'];
+  for (const suffix of suffixes) {
+    try {
+      const symbol = `${ticker}${suffix}`;
+      const result = await (yahooFinance as unknown as { historical: (symbol: string, opts: object) => Promise<HistoricalRow[]> }).historical(symbol, {
+        period1,
+        period2,
+        interval: '1d',
+        events: 'history',
+      });
+      if (result.length > 0 && result[0].close != null) {
+        const actualDate = result[0].date.toISOString().slice(0, 10);
+        return { ticker, price: result[0].close, currency: 'KRW', date: actualDate };
+      }
+    } catch {
+      // try next suffix
+    }
+  }
+  throw Object.assign(new Error('No historical data'), { code: 'NO_DATA' });
 }

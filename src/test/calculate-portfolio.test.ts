@@ -3,8 +3,12 @@ import {
   toKRW,
   calculateTotalValue,
   calculatePortfolioSummary,
+  getBaselineDate,
+  calculatePeriodReturn,
+  calculatePortfolioPeriodReturn,
 } from '@/lib/calculate-portfolio'
 import type { HoldingWithQuote } from '@/types/portfolio.types'
+import type { HistoricalPriceResult } from '@/types/asset.types'
 
 // ─── 헬퍼 ───────────────────────────────────────────────────────────────────
 
@@ -192,5 +196,166 @@ describe('calculatePortfolioSummary()', () => {
     expect(result.allocations[10].color).toBe(result.allocations[0].color)
     // 인접한 두 슬라이스는 다른 색상
     expect(result.allocations[0].color).not.toBe(result.allocations[1].color)
+  })
+})
+
+// ─── getBaselineDate ─────────────────────────────────────────────────────────
+
+describe('getBaselineDate()', () => {
+  it("'1M' → 오늘 기준 30일 전", () => {
+    const expected = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
+    expect(getBaselineDate('1M', '2024-01-15')).toBe(expected)
+  })
+
+  it("'3M' → 오늘 기준 90일 전", () => {
+    const expected = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10)
+    expect(getBaselineDate('3M', '2024-01-15')).toBe(expected)
+  })
+
+  it("'6M' → 오늘 기준 180일 전", () => {
+    const expected = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10)
+    expect(getBaselineDate('6M', '2024-01-15')).toBe(expected)
+  })
+
+  it("'1Y' → 오늘 기준 365일 전", () => {
+    const expected = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10)
+    expect(getBaselineDate('1Y', '2024-01-15')).toBe(expected)
+  })
+
+  it("'전체' → createdAt의 날짜 부분 반환", () => {
+    expect(getBaselineDate('전체', '2024-01-15T10:00:00.000Z')).toBe('2024-01-15')
+  })
+})
+
+// ─── calculatePeriodReturn ───────────────────────────────────────────────────
+
+describe('calculatePeriodReturn()', () => {
+  it('상승 케이스: 현재가 > 기준가 → returnPercent 양수', () => {
+    const holding = makeHolding({
+      ticker: 'AAPL',
+      assetType: 'us-stock',
+      quantity: 1,
+      quote: { ticker: 'AAPL', price: 200, change: 0, changePercent: 0, currency: 'USD' },
+    })
+    const historical: HistoricalPriceResult = {
+      ticker: 'AAPL',
+      price: 100,
+      currency: 'USD',
+      date: '2024-01-15',
+    }
+    const result = calculatePeriodReturn(holding, historical)
+    expect(result.returnPercent).toBeGreaterThan(0)
+    expect(result.returnKRW).toBeGreaterThan(0)
+  })
+
+  it('하락 케이스: 현재가 < 기준가 → returnPercent 음수', () => {
+    const holding = makeHolding({
+      ticker: 'AAPL',
+      assetType: 'us-stock',
+      quantity: 1,
+      quote: { ticker: 'AAPL', price: 80, change: 0, changePercent: 0, currency: 'USD' },
+    })
+    const historical: HistoricalPriceResult = {
+      ticker: 'AAPL',
+      price: 100,
+      currency: 'USD',
+      date: '2024-01-15',
+    }
+    const result = calculatePeriodReturn(holding, historical)
+    expect(result.returnPercent).toBeLessThan(0)
+    expect(result.returnKRW).toBeLessThan(0)
+  })
+
+  it('historicalResult.price === null → returnPercent, returnKRW 모두 null', () => {
+    const holding = makeHolding({
+      ticker: 'AAPL',
+      quantity: 1,
+      quote: { ticker: 'AAPL', price: 200, change: 0, changePercent: 0, currency: 'USD' },
+    })
+    const historical: HistoricalPriceResult = {
+      ticker: 'AAPL',
+      price: null,
+      currency: null,
+      date: null,
+      error: 'NO_DATA',
+    }
+    const result = calculatePeriodReturn(holding, historical)
+    expect(result.returnPercent).toBeNull()
+    expect(result.returnKRW).toBeNull()
+  })
+
+  it('USD 자산: toKRW 환산 적용 — currentPriceKRW = price × 1380 × quantity', () => {
+    // price=100 USD, quantity=2 → 100 * 1380 * 2 = 276,000 KRW
+    const holding = makeHolding({
+      ticker: 'AAPL',
+      assetType: 'us-stock',
+      quantity: 2,
+      quote: { ticker: 'AAPL', price: 100, change: 0, changePercent: 0, currency: 'USD' },
+    })
+    const historical: HistoricalPriceResult = {
+      ticker: 'AAPL',
+      price: 50,
+      currency: 'USD',
+      date: '2024-01-15',
+    }
+    const result = calculatePeriodReturn(holding, historical)
+    expect(result.currentPriceKRW).toBe(276_000)
+    // baselinePriceKRW = 50 * 1380 * 2 = 138,000
+    expect(result.baselinePriceKRW).toBe(138_000)
+    // returnPercent = (276000 - 138000) / 138000 * 100 = 100%
+    expect(result.returnPercent).toBeCloseTo(100)
+  })
+})
+
+// ─── calculatePortfolioPeriodReturn ─────────────────────────────────────────
+
+describe('calculatePortfolioPeriodReturn()', () => {
+  it('빈 holdingsWithQuotes 배열 → returnPercent null', () => {
+    const result = calculatePortfolioPeriodReturn('1M', [], [])
+    expect(result.returnPercent).toBeNull()
+    expect(result.returnKRW).toBeNull()
+  })
+
+  it('단일 종목 정상 케이스 → 올바른 returnPercent 계산', () => {
+    // KRW 자산: 현재 100,000, 기준 80,000 → +25%
+    const holding = makeHolding({
+      ticker: '005930',
+      assetType: 'kr-stock',
+      quantity: 1,
+      quote: { ticker: '005930', price: 100_000, change: 0, changePercent: 0, currency: 'KRW' },
+    })
+    const historical: HistoricalPriceResult = {
+      ticker: '005930',
+      price: 80_000,
+      currency: 'KRW',
+      date: '2024-01-15',
+    }
+    const result = calculatePortfolioPeriodReturn('1M', [holding], [historical])
+    expect(result.returnPercent).toBeCloseTo(25)
+    expect(result.returnKRW).toBe(20_000)
+  })
+
+  it('일부 historicalResult price: null → returnPercent null (hasAllBaselines = false)', () => {
+    const holding1 = makeHolding({
+      id: 'h1',
+      ticker: 'AAPL',
+      assetType: 'us-stock',
+      quantity: 1,
+      quote: { ticker: 'AAPL', price: 200, change: 0, changePercent: 0, currency: 'USD' },
+    })
+    const holding2 = makeHolding({
+      id: 'h2',
+      ticker: '005930',
+      assetType: 'kr-stock',
+      quantity: 1,
+      quote: { ticker: '005930', price: 70_000, change: 0, changePercent: 0, currency: 'KRW' },
+    })
+    const historicals: HistoricalPriceResult[] = [
+      { ticker: 'AAPL', price: 150, currency: 'USD', date: '2024-01-15' },
+      { ticker: '005930', price: null, currency: null, date: null, error: 'NO_DATA' },
+    ]
+    const result = calculatePortfolioPeriodReturn('1M', [holding1, holding2], historicals)
+    expect(result.returnPercent).toBeNull()
+    expect(result.returnKRW).toBeNull()
   })
 })
