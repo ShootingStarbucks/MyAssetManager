@@ -46,7 +46,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
 const mockPrismaUser = prisma.user as { findUnique: ReturnType<typeof vi.fn> }
-const mockBcrypt = bcrypt as { compare: ReturnType<typeof vi.fn> }
+const mockBcrypt = bcrypt as unknown as { compare: ReturnType<typeof vi.fn> }
 
 // Helper to extract the authorize function from the captured Credentials provider config
 type AuthorizeResult = { id: string; email: string; name: string } | null
