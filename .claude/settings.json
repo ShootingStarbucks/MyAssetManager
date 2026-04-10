@@ -18,7 +18,7 @@
           {
             "type": "command",
             "statusMessage": "Git Flow 보호 브랜치 검사 중...",
-            "command": "input=$(cat); cmd=$(echo \"$input\" | grep -o '\"command\":\"[^\"]*\"' | head -1 | sed 's/\"command\":\"//;s/\"$//'); branch=$(git branch --show-current 2>/dev/null); if echo \"$cmd\" | grep -qE '^git (commit|push|merge)' && { [ \"$branch\" = \"main\" ] || [ \"$branch\" = \"develop\" ]; }; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"block\",\"permissionDecisionReason\":\"Git Flow 위반: main/develop에 직접 commit/push/merge 금지. feature|fix|hotfix 브랜치에서 작업 후 PR로 병합하세요.\"}}'; fi"
+            "command": "bash .claude/hooks/git-flow-guard.sh"
           }
         ]
       }
