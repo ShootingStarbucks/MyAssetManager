@@ -1,28 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx prisma:*)",
-      "Bash(npm install:*)",
-      "Bash(npx auth:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
       "Bash(node:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npm run:*)",
-      "Bash(curl:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git config:*)",
-      "Bash(git checkout:*)",
-      "Bash(git branch:*)",
-      "Bash(git merge:*)",
-      "Bash(git push:*)",
-      "Bash(git tag:*)",
-      "Bash(git status)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Skill(update-config)"
+      "Bash(git:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Skill(update-config)",
+      "mcp__plugin_ecc_exa__web_search_exa"
     ]
   },
   "enabledPlugins": {
-    "superpowers@claude-plugins-official": true
+    "ecc@ecc": true,
+    "skill-creator@claude-plugins-official": true
   }
 }
