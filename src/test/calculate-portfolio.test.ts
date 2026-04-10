@@ -17,14 +17,14 @@ function makeHolding(
 ): HoldingWithQuote {
   return {
     id: 'h1',
-    userId: 'u1',
     ticker: 'AAPL',
     assetType: 'us-stock',
     quantity: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: new Date().toISOString(),
+    totalValue: 0,
     quote: {
       ticker: 'AAPL',
+      assetType: 'us-stock',
       price: 100,
       change: 0,
       changePercent: 0,
@@ -78,7 +78,7 @@ describe('calculateTotalValue()', () => {
         ticker: '005930',
         assetType: 'kr-stock',
         quantity: 10,
-        quote: { ticker: '005930', price: 70_000, change: 0, changePercent: 0, currency: 'KRW' },
+        quote: { ticker: '005930', assetType: 'kr-stock' as const, price: 70_000, change: 0, changePercent: 0, currency: 'KRW' },
       }),
     ]
     expect(calculateTotalValue(holdings)).toBe(700_000)
@@ -95,7 +95,7 @@ describe('calculateTotalValue()', () => {
         ticker: '005930',
         assetType: 'kr-stock',
         quantity: 2,
-        quote: { ticker: '005930', price: 70_000, change: 0, changePercent: 0, currency: 'KRW' },
+        quote: { ticker: '005930', assetType: 'kr-stock' as const, price: 70_000, change: 0, changePercent: 0, currency: 'KRW' },
       }),
     ]
     expect(calculateTotalValue(holdings)).toBe(278_000)
@@ -126,7 +126,7 @@ describe('calculatePortfolioSummary()', () => {
     const holdings = [
       makeHolding({
         quantity: 1,
-        quote: { ticker: 'AAPL', price: 110, change: 10, changePercent: 10, currency: 'USD' },
+        quote: { ticker: 'AAPL', assetType: 'us-stock' as const, price: 110, change: 10, changePercent: 10, currency: 'USD' },
       }),
     ]
     const result = calculatePortfolioSummary(holdings)
@@ -138,7 +138,7 @@ describe('calculatePortfolioSummary()', () => {
     const holdings = [
       makeHolding({
         quantity: 1,
-        quote: { ticker: 'AAPL', price: 90, change: -10, changePercent: -10, currency: 'USD' },
+        quote: { ticker: 'AAPL', assetType: 'us-stock' as const, price: 90, change: -10, changePercent: -10, currency: 'USD' },
       }),
     ]
     const result = calculatePortfolioSummary(holdings)
@@ -167,14 +167,14 @@ describe('calculatePortfolioSummary()', () => {
         ticker: 'A',
         assetType: 'kr-stock',
         quantity: 1,
-        quote: { ticker: 'A', price: 100_000, change: 0, changePercent: 0, currency: 'KRW' },
+        quote: { ticker: 'A', assetType: 'kr-stock' as const, price: 100_000, change: 0, changePercent: 0, currency: 'KRW' },
       }),
       makeHolding({
         id: 'h2',
         ticker: 'B',
         assetType: 'kr-stock',
         quantity: 1,
-        quote: { ticker: 'B', price: 100_000, change: 0, changePercent: 0, currency: 'KRW' },
+        quote: { ticker: 'B', assetType: 'kr-stock' as const, price: 100_000, change: 0, changePercent: 0, currency: 'KRW' },
       }),
     ]
     const result = calculatePortfolioSummary(holdings)
@@ -188,7 +188,7 @@ describe('calculatePortfolioSummary()', () => {
         id: `h${i}`,
         ticker: `T${i}`,
         quantity: 1,
-        quote: { ticker: `T${i}`, price: 100, change: 0, changePercent: 0, currency: 'KRW' },
+        quote: { ticker: `T${i}`, assetType: 'kr-stock' as const, price: 100, change: 0, changePercent: 0, currency: 'KRW' },
       })
     )
     const result = calculatePortfolioSummary(holdings)
@@ -235,7 +235,7 @@ describe('calculatePeriodReturn()', () => {
       ticker: 'AAPL',
       assetType: 'us-stock',
       quantity: 1,
-      quote: { ticker: 'AAPL', price: 200, change: 0, changePercent: 0, currency: 'USD' },
+      quote: { ticker: 'AAPL', assetType: 'us-stock' as const, price: 200, change: 0, changePercent: 0, currency: 'USD' },
     })
     const historical: HistoricalPriceResult = {
       ticker: 'AAPL',
@@ -253,7 +253,7 @@ describe('calculatePeriodReturn()', () => {
       ticker: 'AAPL',
       assetType: 'us-stock',
       quantity: 1,
-      quote: { ticker: 'AAPL', price: 80, change: 0, changePercent: 0, currency: 'USD' },
+      quote: { ticker: 'AAPL', assetType: 'us-stock' as const, price: 80, change: 0, changePercent: 0, currency: 'USD' },
     })
     const historical: HistoricalPriceResult = {
       ticker: 'AAPL',
@@ -270,7 +270,7 @@ describe('calculatePeriodReturn()', () => {
     const holding = makeHolding({
       ticker: 'AAPL',
       quantity: 1,
-      quote: { ticker: 'AAPL', price: 200, change: 0, changePercent: 0, currency: 'USD' },
+      quote: { ticker: 'AAPL', assetType: 'us-stock' as const, price: 200, change: 0, changePercent: 0, currency: 'USD' },
     })
     const historical: HistoricalPriceResult = {
       ticker: 'AAPL',
@@ -290,7 +290,7 @@ describe('calculatePeriodReturn()', () => {
       ticker: 'AAPL',
       assetType: 'us-stock',
       quantity: 2,
-      quote: { ticker: 'AAPL', price: 100, change: 0, changePercent: 0, currency: 'USD' },
+      quote: { ticker: 'AAPL', assetType: 'us-stock' as const, price: 100, change: 0, changePercent: 0, currency: 'USD' },
     })
     const historical: HistoricalPriceResult = {
       ticker: 'AAPL',
@@ -322,7 +322,7 @@ describe('calculatePortfolioPeriodReturn()', () => {
       ticker: '005930',
       assetType: 'kr-stock',
       quantity: 1,
-      quote: { ticker: '005930', price: 100_000, change: 0, changePercent: 0, currency: 'KRW' },
+      quote: { ticker: '005930', assetType: 'kr-stock' as const, price: 100_000, change: 0, changePercent: 0, currency: 'KRW' },
     })
     const historical: HistoricalPriceResult = {
       ticker: '005930',
@@ -341,14 +341,14 @@ describe('calculatePortfolioPeriodReturn()', () => {
       ticker: 'AAPL',
       assetType: 'us-stock',
       quantity: 1,
-      quote: { ticker: 'AAPL', price: 200, change: 0, changePercent: 0, currency: 'USD' },
+      quote: { ticker: 'AAPL', assetType: 'us-stock' as const, price: 200, change: 0, changePercent: 0, currency: 'USD' },
     })
     const holding2 = makeHolding({
       id: 'h2',
       ticker: '005930',
       assetType: 'kr-stock',
       quantity: 1,
-      quote: { ticker: '005930', price: 70_000, change: 0, changePercent: 0, currency: 'KRW' },
+      quote: { ticker: '005930', assetType: 'kr-stock' as const, price: 70_000, change: 0, changePercent: 0, currency: 'KRW' },
     })
     const historicals: HistoricalPriceResult[] = [
       { ticker: 'AAPL', price: 150, currency: 'USD', date: '2024-01-15' },
