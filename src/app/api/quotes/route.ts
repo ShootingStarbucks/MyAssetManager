@@ -17,7 +17,7 @@ const requestSchema = z.object({
       ticker: z.string().min(1).max(20),
       assetType: z.enum(['us-stock', 'kr-stock', 'crypto']),
     })
-  ),
+  ).max(20),
 });
 
 type HoldingItem = z.infer<typeof requestSchema>['holdings'][number];
