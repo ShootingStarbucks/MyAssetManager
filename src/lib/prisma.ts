@@ -1,3 +1,4 @@
+import 'server-only';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { PrismaClient as _PrismaClient } from '../generated/prisma/client';
 

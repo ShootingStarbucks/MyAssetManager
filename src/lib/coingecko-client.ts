@@ -1,3 +1,4 @@
+import 'server-only';
 import type { NormalizedQuote } from '@/types/asset.types';
 import type { SearchResult } from '@/types/api.types';
 
