@@ -17,8 +17,9 @@ const addTransactionSchema = z.object({
 });
 
 /** 특정 보유 종목의 모든 거래 내역으로 quantity/avgCost 재계산 */
-async function recalculateHolding(holdingId: string) {
-  const txs = await prisma.transaction.findMany({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function recalculateHolding(holdingId: string, tx: any) {
+  const txs = await tx.transaction.findMany({
     where: { holdingId },
     orderBy: { date: 'asc' },
   });
@@ -26,23 +27,23 @@ async function recalculateHolding(holdingId: string) {
   let qty = 0;
   let totalCost = 0;
 
-  for (const tx of txs) {
-    if (tx.type === 'BUY') {
-      totalCost += tx.quantity * tx.price;
-      qty += tx.quantity;
+  for (const t of txs) {
+    if (t.type === 'BUY') {
+      totalCost += t.quantity * t.price;
+      qty += t.quantity;
     } else {
       // SELL: 비율에 따라 평균 비용 차감
       if (qty > 0) {
         const costPerUnit = totalCost / qty;
-        totalCost -= Math.min(tx.quantity, qty) * costPerUnit;
+        totalCost -= Math.min(t.quantity, qty) * costPerUnit;
       }
-      qty = Math.max(0, qty - tx.quantity);
+      qty = Math.max(0, qty - t.quantity);
     }
   }
 
   const avgCost = qty > 0 && totalCost > 0 ? totalCost / qty : null;
 
-  await prisma.holding.update({
+  await tx.holding.update({
     where: { id: holdingId },
     data: {
       quantity: qty,
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
 
   const { holdingId, type, quantity, price, fee, date, note } = parsed.data;
 
-  // 해당 holding이 본인 것인지 확인
+  // 해당 holding이 본인 것인지 확인 (트랜잭션 밖에서 수행 — 읽기 전용 검증)
   const holding = await prisma.holding.findUnique({ where: { id: holdingId } });
   if (!holding || holding.userId !== session.user.id) {
     return NextResponse.json(
@@ -113,43 +114,54 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const transaction = await prisma.transaction.create({
-    data: {
-      userId: session.user.id,
-      holdingId,
-      ticker: holding.ticker,
-      assetType: holding.assetType,
-      type,
-      quantity,
-      price,
-      fee: fee ?? null,
-      date: date ? new Date(date) : new Date(),
-      note: note ?? null,
-    },
-  });
-
-  // holding의 quantity/avgCost 재계산
-  await recalculateHolding(holdingId);
-
-  // BUY/SELL 시 현금 잔액 자동 연동
   const priceKRW = holding.assetType === 'us-stock' ? price * USD_TO_KRW : price;
   const feeKRW = fee ? (holding.assetType === 'us-stock' ? fee * USD_TO_KRW : fee) : 0;
+  const userId = session.user.id;
 
-  if (type === 'SELL') {
-    // 매도: 현금 증가 (수수료 차감)
-    const proceeds = priceKRW * quantity - feeKRW;
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { cashBalance: { increment: proceeds } },
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await prisma.$transaction(async (tx: any) => {
+      const transaction = await tx.transaction.create({
+        data: {
+          userId,
+          holdingId,
+          ticker: holding.ticker,
+          assetType: holding.assetType,
+          type,
+          quantity,
+          price,
+          fee: fee ?? null,
+          date: date ? new Date(date) : new Date(),
+          note: note ?? null,
+        },
+      });
+
+      await recalculateHolding(holdingId, tx);
+
+      if (type === 'SELL') {
+        // 매도: 현금 증가 (수수료 차감)
+        const proceeds = priceKRW * quantity - feeKRW;
+        await tx.user.update({
+          where: { id: userId },
+          data: { cashBalance: { increment: proceeds } },
+        });
+      } else {
+        // 매수: 현금 차감 (수수료 포함)
+        const cost = priceKRW * quantity + feeKRW;
+        await tx.user.update({
+          where: { id: userId },
+          data: { cashBalance: { decrement: cost } },
+        });
+      }
+
+      return { transaction };
     });
-  } else {
-    // 매수: 현금 차감 (수수료 포함)
-    const cost = priceKRW * quantity + feeKRW;
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { cashBalance: { decrement: cost } },
-    });
+
+    return NextResponse.json(result, { status: 201 });
+  } catch {
+    return NextResponse.json(
+      { error: { code: 'UNKNOWN', message: '처리 중 오류가 발생했습니다.' } satisfies ApiError },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ transaction }, { status: 201 });
 }
