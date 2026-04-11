@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
+import { rateLimit, getClientIp, rateLimitExceededResponse } from '@/lib/rate-limit';
+
+// 1분당 10회
+const QUOTES_LIMIT = { windowMs: 60 * 1000, max: 10 };
 import { fetchUsStockQuote } from '@/lib/finnhub-client';
 import { fetchKrStockQuote } from '@/lib/yahoo-finance-client';
 import { fetchCryptoQuotes } from '@/lib/coingecko-client';
@@ -19,6 +23,15 @@ const requestSchema = z.object({
 type HoldingItem = z.infer<typeof requestSchema>['holdings'][number];
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const limit = rateLimit(`quotes:${ip}`, QUOTES_LIMIT);
+  if (!limit.success) {
+    return NextResponse.json(rateLimitExceededResponse(), {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil(limit.retryAfterMs / 1000)) },
+    });
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json(

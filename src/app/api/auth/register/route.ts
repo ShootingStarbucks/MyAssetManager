@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { rateLimit, getClientIp, rateLimitExceededResponse } from '@/lib/rate-limit';
+
+// 15분당 5회
+const REGISTER_LIMIT = { windowMs: 15 * 60 * 1000, max: 5 };
 
 const registerSchema = z.object({
   email: z.string().email('올바른 이메일을 입력하세요'),
@@ -10,6 +14,15 @@ const registerSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const limit = rateLimit(`register:${ip}`, REGISTER_LIMIT);
+  if (!limit.success) {
+    return NextResponse.json(rateLimitExceededResponse(), {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil(limit.retryAfterMs / 1000)) },
+    });
+  }
+
   const body = await req.json();
   const parsed = registerSchema.safeParse(body);
 
