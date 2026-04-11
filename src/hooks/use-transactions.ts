@@ -53,6 +53,7 @@ export function useAddTransaction() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', variables.holdingId] });
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
+      queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
   });
 }
@@ -72,6 +73,7 @@ export function useRemoveTransaction() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', variables.holdingId] });
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
+      queryClient.invalidateQueries({ queryKey: ['cash'] });
     },
   });
 }
