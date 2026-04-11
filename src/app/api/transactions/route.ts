@@ -131,14 +131,23 @@ export async function POST(req: NextRequest) {
   // holding의 quantity/avgCost 재계산
   await recalculateHolding(holdingId);
 
-  // SELL 시 현금 잔액 자동 추가 (수수료 차감)
+  // BUY/SELL 시 현금 잔액 자동 연동
+  const priceKRW = holding.assetType === 'us-stock' ? price * USD_TO_KRW : price;
+  const feeKRW = fee ? (holding.assetType === 'us-stock' ? fee * USD_TO_KRW : fee) : 0;
+
   if (type === 'SELL') {
-    const priceKRW = holding.assetType === 'us-stock' ? price * USD_TO_KRW : price;
-    const feeKRW = fee ? (holding.assetType === 'us-stock' ? fee * USD_TO_KRW : fee) : 0;
+    // 매도: 현금 증가 (수수료 차감)
     const proceeds = priceKRW * quantity - feeKRW;
     await prisma.user.update({
       where: { id: session.user.id },
       data: { cashBalance: { increment: proceeds } },
+    });
+  } else {
+    // 매수: 현금 차감 (수수료 포함)
+    const cost = priceKRW * quantity + feeKRW;
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { cashBalance: { decrement: cost } },
     });
   }
 

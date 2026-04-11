@@ -60,16 +60,25 @@ export async function DELETE(
 
   const holdingId = transaction.holdingId;
 
-  // SELL 거래 삭제 시 현금 잔액 환원
+  // 거래 삭제 시 현금 잔액 역방향 환원
+  const priceKRW = transaction.assetType === 'us-stock' ? transaction.price * USD_TO_KRW : transaction.price;
+  const feeKRW = transaction.fee
+    ? (transaction.assetType === 'us-stock' ? transaction.fee * USD_TO_KRW : transaction.fee)
+    : 0;
+
   if (transaction.type === 'SELL') {
-    const priceKRW = transaction.assetType === 'us-stock' ? transaction.price * USD_TO_KRW : transaction.price;
-    const feeKRW = transaction.fee
-      ? (transaction.assetType === 'us-stock' ? transaction.fee * USD_TO_KRW : transaction.fee)
-      : 0;
+    // 매도 삭제: 현금 차감 (받았던 금액 환원)
     const proceeds = priceKRW * transaction.quantity - feeKRW;
     await prisma.user.update({
       where: { id: session.user.id },
       data: { cashBalance: { decrement: proceeds } },
+    });
+  } else {
+    // 매수 삭제: 현금 증가 (썼던 금액 환원)
+    const cost = priceKRW * transaction.quantity + feeKRW;
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { cashBalance: { increment: cost } },
     });
   }
 
