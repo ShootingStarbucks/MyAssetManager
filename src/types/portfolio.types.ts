@@ -16,7 +16,7 @@ export interface HoldingWithQuote extends Holding {
 
 export interface AllocationSlice {
   ticker: string;
-  assetType: AssetType;
+  assetType: AssetType | 'cash';
   value: number;
   percentage: number;
   color: string;
