@@ -9,10 +9,10 @@ const USD_TO_KRW = 1380;
 const addTransactionSchema = z.object({
   holdingId: z.string().min(1),
   type: z.enum(['BUY', 'SELL']),
-  quantity: z.number().positive('수량은 0보다 커야 합니다'),
-  price: z.number().positive('가격은 0보다 커야 합니다'),
+  quantity: z.number().positive('수량은 0보다 커야 합니다').max(1_000_000_000, '수량이 허용 범위를 초과했습니다'),
+  price: z.number().positive('가격은 0보다 커야 합니다').max(1_000_000_000, '가격이 허용 범위를 초과했습니다'),
   fee: z.number().min(0).optional(),
-  date: z.string().optional(), // ISO string, defaults to now
+  date: z.string().datetime({ offset: true }).refine(d => new Date(d) <= new Date(), { message: '미래 날짜는 허용되지 않습니다.' }).optional(),
   note: z.string().max(200).optional(),
 });
 
