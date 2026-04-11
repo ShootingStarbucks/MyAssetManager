@@ -8,7 +8,7 @@ import type { AssetType } from '@/types/asset.types';
 
 const ASSET_TYPES: { value: AssetType; label: string; placeholder: string; hint: string }[] = [
   { value: 'us-stock', label: '미국 주식', placeholder: 'AAPL', hint: '예: AAPL, TSLA, NVDA' },
-  { value: 'kr-stock', label: '한국 주식', placeholder: '005930', hint: '예: 005930 (삼성전자)' },
+  { value: 'kr-stock', label: '한국 주식', placeholder: '삼성전자 또는 005930', hint: '예: 삼성전자, 005930' },
   { value: 'crypto', label: '암호화폐', placeholder: 'BTC', hint: '예: BTC, ETH, SOL' },
 ];
 
