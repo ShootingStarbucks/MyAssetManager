@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { ChangeBadge, AssetTypeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
@@ -210,8 +211,9 @@ export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodRetu
           </button>
         </div>
       </td>
-      {showTxModal && (
-        <TransactionModal holding={holding} onClose={() => setShowTxModal(false)} />
+      {showTxModal && createPortal(
+        <TransactionModal holding={holding} onClose={() => setShowTxModal(false)} />,
+        document.body
       )}
     </tr>
   );
