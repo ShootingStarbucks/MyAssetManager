@@ -8,16 +8,13 @@ import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
 import { toKRW, calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
 import { TransactionModal } from './TransactionModal';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
-import type { PeriodReturn } from '@/types/asset.types';
 
 interface HoldingRowProps {
   holding: HoldingWithQuote;
   isQuoteLoading: boolean;
-  periodReturn?: PeriodReturn | null;
-  isPeriodReturnLoading?: boolean;
 }
 
-export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodReturnLoading }: HoldingRowProps) {
+export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editQty, setEditQty] = useState(String(holding.quantity));
   const [isEditingAvgCost, setIsEditingAvgCost] = useState(false);
@@ -148,34 +145,22 @@ export function HoldingRow({ holding, isQuoteLoading, periodReturn, isPeriodRetu
           <span className="text-red-400 text-xs">조회 실패</span>
         )}
       </td>
+      {/* 수익률 (평균매수단가 기준) */}
       <td className="px-4 py-3 text-right">
-        {isPeriodReturnLoading ? (
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
-        ) : periodReturn?.returnPercent != null ? (
-          <span className={`text-sm font-medium ${periodReturn.returnPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {periodReturn.returnPercent >= 0 ? '+' : ''}{periodReturn.returnPercent.toFixed(2)}%
-          </span>
-        ) : holding.quote ? (
-          <span className={`text-sm font-medium ${holding.quote.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {holding.quote.changePercent >= 0 ? '+' : ''}{holding.quote.changePercent.toFixed(2)}%
+        {unrealizedPnLPercent !== null ? (
+          <span className={`text-sm font-medium ${unrealizedPnLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {unrealizedPnLPercent >= 0 ? '+' : ''}{unrealizedPnLPercent.toFixed(2)}%
           </span>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-gray-300">—</span>
         )}
       </td>
       {/* 평가손익 */}
       <td className="px-4 py-3 text-right">
         {unrealizedPnL !== null ? (
-          <div>
-            <div className={`text-sm font-medium ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {unrealizedPnL >= 0 ? '+' : ''}{formatKRW(unrealizedPnL)}
-            </div>
-            {unrealizedPnLPercent !== null && (
-              <div className={`text-xs ${unrealizedPnLPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {unrealizedPnLPercent >= 0 ? '+' : ''}{unrealizedPnLPercent.toFixed(2)}%
-              </div>
-            )}
-          </div>
+          <span className={`text-sm font-medium ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {unrealizedPnL >= 0 ? '+' : ''}{formatKRW(unrealizedPnL)}
+          </span>
         ) : (
           <span className="text-gray-300">—</span>
         )}

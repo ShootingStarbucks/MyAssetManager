@@ -1,5 +1,5 @@
 import type { FinnhubQuoteResponse, SearchResult } from '@/types/api.types';
-import type { NormalizedQuote, HistoricalPrice } from '@/types/asset.types';
+import type { NormalizedQuote } from '@/types/asset.types';
 
 const API_KEY = process.env.FINNHUB_API_KEY;
 
@@ -45,31 +45,6 @@ export async function fetchUsStockQuote(ticker: string): Promise<NormalizedQuote
     changePercent: data.dp,
     currency: 'USD',
   };
-}
-
-export async function fetchUsStockHistoricalPrice(
-  ticker: string,
-  date: string, // "YYYY-MM-DD"
-): Promise<HistoricalPrice> {
-  const apiKey = process.env.FINNHUB_API_KEY;
-  if (!apiKey) throw Object.assign(new Error('Missing FINNHUB_API_KEY'), { code: 'NETWORK_ERROR' });
-
-  const fromUnix = Math.floor(new Date(date + 'T00:00:00Z').getTime() / 1000);
-  const toUnix = fromUnix + 4 * 86400; // +4 days to cover weekends/holidays
-
-  const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=D&from=${fromUnix}&to=${toUnix}&token=${apiKey}`;
-  const res = await fetch(url);
-
-  if (res.status === 429) throw Object.assign(new Error('Rate limited'), { code: 'RATE_LIMITED' });
-  if (!res.ok) throw Object.assign(new Error('Finnhub error'), { code: 'NETWORK_ERROR' });
-
-  const data = await res.json();
-  if (data.s === 'no_data' || !data.c || data.c.length === 0) {
-    throw Object.assign(new Error('No data'), { code: 'NO_DATA' });
-  }
-
-  const actualDate = new Date(data.t[0] * 1000).toISOString().slice(0, 10);
-  return { ticker, price: data.c[0], currency: 'USD', date: actualDate };
 }
 
 export async function searchUsStocks(query: string): Promise<SearchResult[]> {

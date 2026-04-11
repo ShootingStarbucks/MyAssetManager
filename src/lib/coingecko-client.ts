@@ -1,4 +1,4 @@
-import type { NormalizedQuote, HistoricalPrice } from '@/types/asset.types';
+import type { NormalizedQuote } from '@/types/asset.types';
 import type { SearchResult } from '@/types/api.types';
 
 // BTC → bitcoin 등 CoinGecko ID 매핑 (주요 코인)
@@ -76,28 +76,6 @@ export async function fetchCryptoQuotes(tickers: string[]): Promise<NormalizedQu
       currency: 'KRW' as const,
     };
   });
-}
-
-export async function fetchCryptoHistoricalPrice(
-  ticker: string,
-  date: string, // "YYYY-MM-DD"
-): Promise<HistoricalPrice> {
-  const coinId = getCoinGeckoId(ticker);
-  // CoinGecko expects DD-MM-YYYY
-  const [year, month, day] = date.split('-');
-  const cgDate = `${day}-${month}-${year}`;
-
-  const url = `https://api.coingecko.com/api/v3/coins/${coinId}/history?date=${cgDate}&localization=false`;
-  const res = await fetch(url);
-
-  if (res.status === 429) throw Object.assign(new Error('Rate limited'), { code: 'RATE_LIMITED' });
-  if (!res.ok) throw Object.assign(new Error('CoinGecko error'), { code: 'NETWORK_ERROR' });
-
-  const data = await res.json();
-  const price = data?.market_data?.current_price?.krw;
-  if (price == null) throw Object.assign(new Error('No data'), { code: 'NO_DATA' });
-
-  return { ticker, price, currency: 'KRW', date };
 }
 
 export async function searchCrypto(query: string): Promise<SearchResult[]> {

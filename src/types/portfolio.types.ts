@@ -30,4 +30,5 @@ export interface PortfolioSummary {
   allocations: AllocationSlice[];
   currency: 'KRW';
   totalUnrealizedPnL: number | null;
+  totalReturnPercent: number | null;
 }
