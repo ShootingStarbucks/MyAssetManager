@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import type { ApiError } from '@/types/api.types';
 
+const USD_TO_KRW = 1380;
+
 /** 특정 보유 종목의 모든 거래 내역으로 quantity/avgCost 재계산 */
 async function recalculateHolding(holdingId: string) {
   const txs = await prisma.transaction.findMany({
@@ -57,6 +59,20 @@ export async function DELETE(
   }
 
   const holdingId = transaction.holdingId;
+
+  // SELL 거래 삭제 시 현금 잔액 환원
+  if (transaction.type === 'SELL') {
+    const priceKRW = transaction.assetType === 'us-stock' ? transaction.price * USD_TO_KRW : transaction.price;
+    const feeKRW = transaction.fee
+      ? (transaction.assetType === 'us-stock' ? transaction.fee * USD_TO_KRW : transaction.fee)
+      : 0;
+    const proceeds = priceKRW * transaction.quantity - feeKRW;
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { cashBalance: { decrement: proceeds } },
+    });
+  }
+
   await prisma.transaction.delete({ where: { id } });
 
   // 삭제 후 holding 재계산

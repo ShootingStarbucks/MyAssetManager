@@ -1,8 +1,9 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import { useUpdateCashBalance } from '@/hooks/use-cash';
 import { PeriodContext } from './DashboardShell';
 import { usePeriodReturns } from '@/hooks/use-period-returns';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -12,13 +13,28 @@ import { Spinner } from '@/components/ui/Spinner';
 import type { ReturnPeriod } from '@/types/asset.types';
 
 export function PortfolioSummaryCard() {
-  const { summary, holdings: holdingsWithQuotes, isLoading, lastUpdatedAt } = usePortfolioSummary();
+  const { summary, holdings: holdingsWithQuotes, cashBalance, isLoading, lastUpdatedAt } = usePortfolioSummary();
+  const { mutate: updateCash, isPending: isCashUpdating } = useUpdateCashBalance();
   const queryClient = useQueryClient();
   const { period, setPeriod } = useContext(PeriodContext);
   const { portfolioPeriodReturn, isLoading: isPeriodLoading } = usePeriodReturns(holdingsWithQuotes, period);
 
+  const [isEditingCash, setIsEditingCash] = useState(false);
+  const [editCash, setEditCash] = useState('');
+
   function handleRefresh() {
     queryClient.invalidateQueries({ queryKey: ['quotes'] });
+  }
+
+  function handleCashEdit() {
+    setEditCash(String(cashBalance));
+    setIsEditingCash(true);
+  }
+
+  function handleCashSave() {
+    const value = parseFloat(editCash);
+    if (isNaN(value) || value < 0) return;
+    updateCash(value, { onSuccess: () => setIsEditingCash(false) });
   }
 
   return (
@@ -103,6 +119,45 @@ export function PortfolioSummaryCard() {
               <ChangeBadge value={summary.totalChangePercent} />
               <span className="text-xs text-gray-400">전일 대비</span>
             </div>
+            {/* 현금 잔액 */}
+            <div className="flex items-center justify-between py-2 border-t border-gray-100 mt-2">
+              <span className="text-xs text-gray-500">보유 현금</span>
+              {isEditingCash ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    value={editCash}
+                    onChange={(e) => setEditCash(e.target.value)}
+                    min="0"
+                    step="1"
+                    autoFocus
+                    className="w-32 px-2 py-0.5 border border-blue-300 rounded text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={handleCashSave}
+                    disabled={isCashUpdating}
+                    className="text-xs px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    확인
+                  </button>
+                  <button
+                    onClick={() => setIsEditingCash(false)}
+                    className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                  >
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleCashEdit}
+                  className="text-xs font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                  title="클릭하여 현금 잔액 수정"
+                >
+                  {formatKRW(cashBalance)}
+                </button>
+              )}
+            </div>
+
             <div className="text-xs text-gray-400">
               {summary.holdingsCount}개 자산
               {lastUpdatedAt && (

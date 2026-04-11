@@ -45,19 +45,24 @@ export function calculateUnrealizedPnL(holding: HoldingWithQuote): {
   return { unrealizedPnL, unrealizedPnLPercent, avgCostKRW };
 }
 
-export function calculatePortfolioSummary(holdings: HoldingWithQuote[]): PortfolioSummary {
+export function calculatePortfolioSummary(
+  holdings: HoldingWithQuote[],
+  cashBalance = 0
+): PortfolioSummary {
   const validHoldings = holdings.filter((h) => h.quote !== null);
 
-  const totalValue = validHoldings.reduce((sum, h) => {
+  const holdingsValue = validHoldings.reduce((sum, h) => {
     const priceKRW = toKRW(h.quote!.price, h.quote!.currency);
     return sum + priceKRW * h.quantity;
   }, 0);
+
+  const totalValue = holdingsValue + cashBalance;
 
   const totalYesterdayValue = validHoldings.reduce((sum, h) => {
     const prevPrice = h.quote!.price - h.quote!.change;
     const prevPriceKRW = toKRW(prevPrice, h.quote!.currency);
     return sum + prevPriceKRW * h.quantity;
-  }, 0);
+  }, cashBalance); // 현금은 전일 대비 변동 없음
 
   const totalChange = totalValue - totalYesterdayValue;
   const totalChangePercent =
@@ -74,6 +79,17 @@ export function calculatePortfolioSummary(holdings: HoldingWithQuote[]): Portfol
       color: CHART_COLORS[i % CHART_COLORS.length],
     };
   });
+
+  // 현금 슬라이스 추가
+  if (cashBalance > 0) {
+    allocations.push({
+      ticker: '현금',
+      assetType: 'cash',
+      value: cashBalance,
+      percentage: totalValue > 0 ? (cashBalance / totalValue) * 100 : 0,
+      color: '#6B7280', // gray-500
+    });
+  }
 
   const holdingsWithAvgCost = validHoldings.filter(h => h.avgCost != null);
   let totalUnrealizedPnL: number | null = null;

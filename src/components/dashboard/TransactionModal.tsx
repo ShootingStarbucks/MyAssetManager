@@ -23,7 +23,8 @@ export function TransactionModal({ holding, onClose }: TransactionModalProps) {
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
   const [fee, setFee] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const today = new Date().toISOString().slice(0, 10);
+  const [date, setDate] = useState(today);
   const [note, setNote] = useState('');
 
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -161,6 +162,7 @@ export function TransactionModal({ holding, onClose }: TransactionModalProps) {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  max={today}
                   required
                   className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />

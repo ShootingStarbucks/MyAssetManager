@@ -12,6 +12,7 @@ model User {
   email        String        @unique
   name         String?
   password     String?
+  cashBalance  Float         @default(0)
   holdings     Holding[]
   transactions Transaction[]
   createdAt    DateTime      @default(now())

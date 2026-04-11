@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import type { ApiError } from '@/types/api.types';
 
+const USD_TO_KRW = 1380;
+
 const addTransactionSchema = z.object({
   holdingId: z.string().min(1),
   type: z.enum(['BUY', 'SELL']),
@@ -128,6 +130,17 @@ export async function POST(req: NextRequest) {
 
   // holding의 quantity/avgCost 재계산
   await recalculateHolding(holdingId);
+
+  // SELL 시 현금 잔액 자동 추가 (수수료 차감)
+  if (type === 'SELL') {
+    const priceKRW = holding.assetType === 'us-stock' ? price * USD_TO_KRW : price;
+    const feeKRW = fee ? (holding.assetType === 'us-stock' ? fee * USD_TO_KRW : fee) : 0;
+    const proceeds = priceKRW * quantity - feeKRW;
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { cashBalance: { increment: proceeds } },
+    });
+  }
 
   return NextResponse.json({ transaction }, { status: 201 });
 }
