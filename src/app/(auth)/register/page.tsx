@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +29,7 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push('/login?registered=1');
+    window.location.href = '/login?registered=1';
   }
 
   return (
