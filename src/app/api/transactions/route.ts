@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { USD_TO_KRW } from '@/lib/calculate-portfolio';
 import type { ApiError } from '@/types/api.types';
-
-const USD_TO_KRW = 1380;
 
 const addTransactionSchema = z.object({
   holdingId: z.string().min(1),
@@ -18,7 +17,12 @@ const addTransactionSchema = z.object({
 
 /** 특정 보유 종목의 모든 거래 내역으로 quantity/avgCost 재계산 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function recalculateHolding(holdingId: string, tx: any) {
+async function recalculateHolding(holdingId: string, userId: string, tx: any) {
+  const holding = await tx.holding.findUnique({ where: { id: holdingId } });
+  if (!holding || holding.userId !== userId) {
+    throw new Error('holding not found');
+  }
+
   const txs = await tx.transaction.findMany({
     where: { holdingId },
     orderBy: { date: 'asc' },
@@ -136,7 +140,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      await recalculateHolding(holdingId, tx);
+      await recalculateHolding(holdingId, userId, tx);
 
       if (type === 'SELL') {
         // 매도: 현금 증가 (수수료 차감)

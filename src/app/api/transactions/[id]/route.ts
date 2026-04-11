@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { USD_TO_KRW } from '@/lib/calculate-portfolio';
 import type { ApiError } from '@/types/api.types';
-
-const USD_TO_KRW = 1380;
 
 /** 특정 보유 종목의 모든 거래 내역으로 quantity/avgCost 재계산 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function recalculateHolding(holdingId: string, tx: any) {
+async function recalculateHolding(holdingId: string, userId: string, tx: any) {
+  const holding = await tx.holding.findUnique({ where: { id: holdingId } });
+  if (!holding || holding.userId !== userId) {
+    throw new Error('holding not found');
+  }
+
   const txs = await tx.transaction.findMany({
     where: { holdingId },
     orderBy: { date: 'asc' },
@@ -89,7 +93,7 @@ export async function DELETE(
       await tx.transaction.delete({ where: { id } });
 
       // 삭제 후 holding 재계산
-      await recalculateHolding(holdingId, tx);
+      await recalculateHolding(holdingId, userId, tx);
     });
 
     return new NextResponse(null, { status: 204 });

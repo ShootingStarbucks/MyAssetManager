@@ -1,3 +1,4 @@
+import 'server-only';
 import YahooFinance from 'yahoo-finance2';
 const yahooFinance = new YahooFinance();
 import type { NormalizedQuote } from '@/types/asset.types';

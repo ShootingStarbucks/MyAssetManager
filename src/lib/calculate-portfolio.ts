@@ -2,7 +2,7 @@ import type { HoldingWithQuote, AllocationSlice, PortfolioSummary } from '@/type
 
 // USD → KRW 환율 (실제 서비스에서는 환율 API 사용 권장)
 // 현재는 고정 환율 사용 (추후 실시간 환율로 대체 가능)
-const USD_TO_KRW = 1380;
+export const USD_TO_KRW = 1380;
 
 const CHART_COLORS = [
   '#3B82F6', // blue-500

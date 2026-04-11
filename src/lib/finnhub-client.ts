@@ -1,3 +1,4 @@
+import 'server-only';
 import type { FinnhubQuoteResponse, SearchResult } from '@/types/api.types';
 import type { NormalizedQuote } from '@/types/asset.types';
 
