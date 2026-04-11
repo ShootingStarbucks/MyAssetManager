@@ -58,8 +58,7 @@ Types: `feat` | `fix` | `test` | `chore` | `refactor` | `docs` | `style`
 1. Run `git status` to check current branch
 2. Create `feature/<task>` branch from `develop`
 3. Commit in logical units after work is done
-4. Merge into `develop` with `--no-ff`, delete feature branch
-5. Push to remote with `git push origin develop`
+4. Stop — do NOT merge or push. Wait for user to confirm before merging.
 
 ## Commands
 

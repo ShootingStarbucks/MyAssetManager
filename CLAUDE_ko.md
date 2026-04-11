@@ -58,8 +58,7 @@ refactor(portfolio): 수익률 계산 로직 분리
 1. `git status`로 현재 브랜치 확인
 2. `develop`에서 `feature/<작업명>` 브랜치 생성
 3. 작업 완료 후 논리적 단위로 커밋
-4. `develop`으로 `--no-ff` 머지 후 feature 브랜치 삭제
-5. `git push origin develop`으로 원격 동기화
+4. 여기서 중단 — 머지·푸시 금지. 머지 전 반드시 사용자 확인 대기.
 
 ## 명령어
 
