@@ -6,6 +6,7 @@ import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 import { useUpdateCashBalance } from '@/hooks/use-cash';
 import { PeriodContext } from './DashboardShell';
 import { usePeriodReturns } from '@/hooks/use-period-returns';
+import { useAllTransactions } from '@/hooks/use-transactions';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ChangeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPercent } from '@/lib/format-currency';
@@ -17,7 +18,8 @@ export function PortfolioSummaryCard() {
   const { mutate: updateCash, isPending: isCashUpdating } = useUpdateCashBalance();
   const queryClient = useQueryClient();
   const { period, setPeriod } = useContext(PeriodContext);
-  const { portfolioPeriodReturn, isLoading: isPeriodLoading } = usePeriodReturns(holdingsWithQuotes, period);
+  const { transactions } = useAllTransactions();
+  const { portfolioPeriodReturn, isLoading: isPeriodLoading } = usePeriodReturns(holdingsWithQuotes, transactions, period);
 
   const [isEditingCash, setIsEditingCash] = useState(false);
   const [editCash, setEditCash] = useState('');

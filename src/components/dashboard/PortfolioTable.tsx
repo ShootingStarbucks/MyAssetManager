@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 import { PeriodContext } from './DashboardShell';
 import { usePeriodReturns } from '@/hooks/use-period-returns';
+import { useAllTransactions } from '@/hooks/use-transactions';
 import { HoldingRow } from './HoldingRow';
 import { Spinner } from '@/components/ui/Spinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -23,7 +24,8 @@ function SkeletonRow() {
 export function PortfolioTable() {
   const { holdings, isLoading, isError } = usePortfolioSummary();
   const { period } = useContext(PeriodContext);
-  const { periodReturns, isLoading: isPeriodLoading } = usePeriodReturns(holdings, period);
+  const { transactions } = useAllTransactions();
+  const { periodReturns, isLoading: isPeriodLoading } = usePeriodReturns(holdings, transactions, period);
 
   if (isLoading && holdings.length === 0) {
     return (

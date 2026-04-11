@@ -6,6 +6,9 @@ import {
   getBaselineDate,
   calculatePeriodReturn,
   calculatePortfolioPeriodReturn,
+  daysBetween,
+  getQuantityAtPeriodStart,
+  calculateModifiedDietz,
 } from '@/lib/calculate-portfolio'
 import type { HoldingWithQuote } from '@/types/portfolio.types'
 import type { HistoricalPriceResult } from '@/types/asset.types'
@@ -357,5 +360,91 @@ describe('calculatePortfolioPeriodReturn()', () => {
     const result = calculatePortfolioPeriodReturn('1M', [holding1, holding2], historicals)
     expect(result.returnPercent).toBeNull()
     expect(result.returnKRW).toBeNull()
+  })
+})
+
+// ─── daysBetween ─────────────────────────────────────────────────────────────
+
+describe('daysBetween()', () => {
+  it('같은 날이면 0을 반환한다', () => {
+    expect(daysBetween('2024-01-01', '2024-01-01')).toBe(0)
+  })
+
+  it('1일 차이를 올바르게 계산한다', () => {
+    expect(daysBetween('2024-01-01', '2024-01-02')).toBe(1)
+  })
+
+  it('30일 차이를 올바르게 계산한다', () => {
+    expect(daysBetween('2024-01-01', '2024-01-31')).toBe(30)
+  })
+
+  it('역방향(B가 A보다 이전)은 음수를 반환한다', () => {
+    expect(daysBetween('2024-01-31', '2024-01-01')).toBe(-30)
+  })
+})
+
+// ─── getQuantityAtPeriodStart ─────────────────────────────────────────────────
+
+describe('getQuantityAtPeriodStart()', () => {
+  it('거래가 없으면 현재 수량을 그대로 반환한다', () => {
+    expect(getQuantityAtPeriodStart(10, [])).toBe(10)
+  })
+
+  it('기간 내 BUY 거래를 역산하여 기초 수량을 계산한다', () => {
+    const txs = [{ type: 'BUY' as const, quantity: 10 }]
+    expect(getQuantityAtPeriodStart(20, txs)).toBe(10)
+  })
+
+  it('기간 내 SELL 거래를 역산하여 기초 수량을 계산한다', () => {
+    const txs = [{ type: 'SELL' as const, quantity: 5 }]
+    expect(getQuantityAtPeriodStart(5, txs)).toBe(10)
+  })
+
+  it('BUY/SELL이 혼합된 경우 올바르게 역산한다', () => {
+    const txs = [
+      { type: 'BUY' as const, quantity: 10 },
+      { type: 'SELL' as const, quantity: 5 },
+    ]
+    expect(getQuantityAtPeriodStart(15, txs)).toBe(10)
+  })
+})
+
+// ─── calculateModifiedDietz ──────────────────────────────────────────────────
+
+describe('calculateModifiedDietz()', () => {
+  it('거래 없이 가격만 상승하면 단순 수익률과 동일하다', () => {
+    const result = calculateModifiedDietz(1_000_000, 1_100_000, [])
+    expect(result).not.toBeNull()
+    expect(result!.returnPercent).toBeCloseTo(10, 5)
+    expect(result!.returnKRW).toBe(100_000)
+  })
+
+  it('기간 중반에 추가 매수가 있으면 정확한 수익률을 계산한다', () => {
+    // BMV 700,000 / EMV 1,500,000 / 45일째 CF +720,000 (W=0.5)
+    // 분자: 1,500,000 - 700,000 - 720,000 = 80,000
+    // 분모: 700,000 + 720,000×0.5 = 1,060,000 → 7.547%
+    const result = calculateModifiedDietz(700_000, 1_500_000, [{ amount: 720_000, weight: 0.5 }])
+    expect(result).not.toBeNull()
+    expect(result!.returnPercent).toBeCloseTo(7.547, 2)
+    expect(result!.returnKRW).toBe(80_000)
+  })
+
+  it('기간 초 매수(W≈1): 투입 자본이 전체 기간 반영된다', () => {
+    // BMV 0, EMV 1,100,000, CF 1,000,000 (W=0.99)
+    // 분자: 100,000 / 분모: 990,000
+    const result = calculateModifiedDietz(0, 1_100_000, [{ amount: 1_000_000, weight: 0.99 }])
+    expect(result).not.toBeNull()
+    expect(result!.returnPercent).toBeCloseTo(100_000 / 990_000 * 100, 2)
+  })
+
+  it('BMV와 가중 CF 모두 0이면 null을 반환한다 (분모 0)', () => {
+    expect(calculateModifiedDietz(0, 500_000, [])).toBeNull()
+  })
+
+  it('손실 케이스를 올바르게 계산한다', () => {
+    const result = calculateModifiedDietz(1_000_000, 900_000, [])
+    expect(result).not.toBeNull()
+    expect(result!.returnPercent).toBeCloseTo(-10, 5)
+    expect(result!.returnKRW).toBe(-100_000)
   })
 })

@@ -28,6 +28,21 @@ export function useTransactions(holdingId: string | null) {
   });
 }
 
+/** 로그인 사용자의 전체 거래 내역을 조회합니다. Modified Dietz 수익률 계산에 사용됩니다. */
+export function useAllTransactions() {
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['transactions', 'all'],
+    queryFn: async () => {
+      const res = await fetch('/api/transactions');
+      if (!res.ok) throw new Error('거래 내역을 불러오지 못했습니다');
+      const data = await res.json();
+      return data.transactions as Transaction[];
+    },
+    staleTime: 60 * 1000, // 1분
+  });
+  return { transactions: data, isLoading };
+}
+
 export function useAddTransaction() {
   const queryClient = useQueryClient();
 
