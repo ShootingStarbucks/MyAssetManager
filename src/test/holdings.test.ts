@@ -160,7 +160,7 @@ describe('POST /api/holdings', () => {
   it('8. 중복 ticker (DB unique 제약) → 409', async () => {
     mockAuth.mockResolvedValue(AUTHED_SESSION)
     mockHolding.count.mockResolvedValue(0)
-    mockHolding.create.mockRejectedValue(new Error('Unique constraint'))
+    mockHolding.create.mockRejectedValue(Object.assign(new Error('Unique constraint'), { code: 'P2002' }))
 
     const res = await POST(makePostRequest({ ticker: 'AAPL', assetType: 'us-stock', quantity: 1 }))
     expect(res.status).toBe(409)
