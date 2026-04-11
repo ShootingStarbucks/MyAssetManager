@@ -108,4 +108,34 @@ describe('auth.ts — authorize() 콜백', () => {
 
     expect(result).toBeNull()
   })
+
+  it('5. credentials 자체가 undefined → null 반환', async () => {
+    const authorize = getAuthorize()
+    const result = await (authorize as (c: unknown) => Promise<AuthorizeResult>)(undefined)
+
+    expect(result).toBeNull()
+  })
+
+  it('6. DB 사용자 password가 null (소셜 로그인 계정) → bcrypt 미호출, null 반환', async () => {
+    mockPrismaUser.findUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'user@example.com',
+      name: '홍길동',
+      password: null,
+    })
+
+    const authorize = getAuthorize()
+    const result = await authorize({ email: 'user@example.com', password: 'password123' })
+
+    expect(result).toBeNull()
+    expect(mockBcrypt.compare).not.toHaveBeenCalled()
+  })
+
+  it('7. 이메일 형식 오류 (Zod 실패) → DB 조회 없이 null 반환', async () => {
+    const authorize = getAuthorize()
+    const result = await authorize({ email: 'not-an-email', password: 'password123' })
+
+    expect(result).toBeNull()
+    expect(mockPrismaUser.findUnique).not.toHaveBeenCalled()
+  })
 })
