@@ -74,4 +74,31 @@ describe('middleware — authorized callback (authConfig)', () => {
     // /login is not a dashboard route, so it always passes
     expect(result).toBe(true)
   })
+
+  it('4. 미인증 + /dashboard/portfolio → false (서브 라우트도 보호됨)', () => {
+    const result = authorizedCallback({
+      auth: makeAuth(false),
+      request: makeRequestCtx('/dashboard/portfolio'),
+    })
+
+    expect(result).toBe(false)
+  })
+
+  it('5. 미인증 + / (루트) → true (퍼블릭 접근 가능)', () => {
+    const result = authorizedCallback({
+      auth: makeAuth(false),
+      request: makeRequestCtx('/'),
+    })
+
+    expect(result).toBe(true)
+  })
+
+  it('6. 미인증 + /register → true (회원가입 페이지 접근 가능)', () => {
+    const result = authorizedCallback({
+      auth: makeAuth(false),
+      request: makeRequestCtx('/register'),
+    })
+
+    expect(result).toBe(true)
+  })
 })

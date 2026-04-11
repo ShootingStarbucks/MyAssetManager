@@ -22,11 +22,13 @@ vi.mock('bcryptjs', () => ({
 // Import after mocks are set up
 import { POST } from '@/app/api/auth/register/route'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 const mockPrismaUser = prisma.user as {
   findUnique: ReturnType<typeof vi.fn>
   create: ReturnType<typeof vi.fn>
 }
+const mockBcrypt = bcrypt as unknown as { hash: ReturnType<typeof vi.fn> }
 
 function makeRequest(body: unknown): NextRequest {
   return new NextRequest('http://localhost/api/auth/register', {
@@ -87,5 +89,43 @@ describe('POST /api/auth/register', () => {
     const res = await POST(req)
 
     expect(res.status).toBe(400)
+  })
+
+  it('5. name 미포함 (optional 필드) → 201 성공', async () => {
+    mockPrismaUser.findUnique.mockResolvedValue(null)
+    mockPrismaUser.create.mockResolvedValue({
+      id: 'user-id-2',
+      email: 'noname@example.com',
+      name: null,
+    })
+
+    const req = makeRequest({ email: 'noname@example.com', password: 'password123' })
+    const res = await POST(req)
+
+    expect(res.status).toBe(201)
+  })
+
+  it('6. name 빈 문자열("") → 400 VALIDATION_ERROR', async () => {
+    const req = makeRequest({ email: 'test@example.com', password: 'password123', name: '' })
+    const res = await POST(req)
+    const json = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(json.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('7. bcrypt.hash가 saltRounds=12로 호출됨 — 보안 설정 고정 검증', async () => {
+    mockPrismaUser.findUnique.mockResolvedValue(null)
+    mockPrismaUser.create.mockResolvedValue({
+      id: 'user-id-3',
+      email: 'test@example.com',
+      name: '홍길동',
+    })
+    mockBcrypt.hash.mockResolvedValue('hashed_password')
+
+    const req = makeRequest({ email: 'test@example.com', password: 'password123', name: '홍길동' })
+    await POST(req)
+
+    expect(mockBcrypt.hash).toHaveBeenCalledWith('password123', 12)
   })
 })
