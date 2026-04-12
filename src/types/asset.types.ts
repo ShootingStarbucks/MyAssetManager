@@ -7,6 +7,7 @@ export interface NormalizedQuote {
   change: number;
   changePercent: number;
   currency: 'USD' | 'KRW';
+  name?: string;
 }
 
 export interface QuoteResult {
