@@ -53,7 +53,12 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900">{holding.ticker}</span>
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-900">{holding.ticker}</span>
+            {holding.assetType === 'kr-stock' && quote?.name && (
+              <span className="text-xs text-gray-400">{quote.name}</span>
+            )}
+          </div>
           <AssetTypeBadge type={holding.assetType} />
         </div>
       </td>
