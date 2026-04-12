@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { History, Trash2 } from 'lucide-react';
+import { History, Pencil, Trash2 } from 'lucide-react';
 import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { ChangeBadge, AssetTypeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
@@ -22,6 +22,9 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
   const [editAvgCost, setEditAvgCost] = useState(holding.avgCost != null ? String(holding.avgCost) : '');
   const [showTxModal, setShowTxModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [modalQty, setModalQty] = useState('');
+  const [modalAvgCost, setModalAvgCost] = useState('');
 
   const { mutate: remove, isPending: isRemoving } = useRemoveHolding();
   const { mutate: update, isPending: isUpdating } = useUpdateHolding();
@@ -46,6 +49,23 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
     update(
       { id: holding.id, avgCost: cost },
       { onSuccess: () => setIsEditingAvgCost(false) }
+    );
+  }
+
+  function openEditModal() {
+    setModalQty(String(holding.quantity));
+    setModalAvgCost(holding.avgCost != null ? String(holding.avgCost) : '');
+    setShowEditModal(true);
+  }
+
+  function handleEditSave() {
+    const qty = parseFloat(modalQty);
+    if (isNaN(qty) || qty <= 0) return;
+    const cost = modalAvgCost === '' ? null : parseFloat(modalAvgCost);
+    if (cost !== null && (isNaN(cost) || cost <= 0)) return;
+    update(
+      { id: holding.id, quantity: qty, avgCost: cost },
+      { onSuccess: () => setShowEditModal(false) }
     );
   }
 
@@ -190,6 +210,14 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
             <History className="h-4 w-4" />
           </button>
           <button
+            onClick={openEditModal}
+            className="text-gray-400 hover:text-amber-500 transition-colors"
+            title="편집"
+            aria-label="편집"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
             onClick={() => setShowDeleteConfirm(true)}
             disabled={isRemoving}
             className="text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors"
@@ -202,6 +230,65 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
       </td>
       {showTxModal && createPortal(
         <TransactionModal holding={holding} onClose={() => setShowTxModal(false)} />,
+        document.body
+      )}
+      {showEditModal && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 w-80 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-gray-900">
+              자산 편집 — <span className="text-blue-600">{holding.ticker}</span>
+            </h2>
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-500">수량</span>
+                <input
+                  type="number"
+                  value={modalQty}
+                  onChange={(e) => setModalQty(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  step="any"
+                  placeholder="수량 입력"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-500">
+                  평단가 ({holding.quote?.currency === 'USD' ? 'USD' : '원'})
+                </span>
+                <input
+                  type="number"
+                  value={modalAvgCost}
+                  onChange={(e) => setModalAvgCost(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  step="any"
+                  placeholder="평단가 입력 (선택)"
+                />
+              </label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleEditSave}
+                disabled={isUpdating}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {isUpdating ? '저장 중...' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>,
         document.body
       )}
       {showDeleteConfirm && createPortal(
