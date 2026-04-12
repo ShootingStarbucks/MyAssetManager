@@ -20,6 +20,7 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
   const [isEditingAvgCost, setIsEditingAvgCost] = useState(false);
   const [editAvgCost, setEditAvgCost] = useState(holding.avgCost != null ? String(holding.avgCost) : '');
   const [showTxModal, setShowTxModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { mutate: remove, isPending: isRemoving } = useRemoveHolding();
   const { mutate: update, isPending: isUpdating } = useUpdateHolding();
@@ -185,7 +186,7 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
             </svg>
           </button>
           <button
-            onClick={() => remove(holding.id)}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={isRemoving}
             className="text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors"
             title="삭제"
@@ -198,6 +199,38 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
       </td>
       {showTxModal && createPortal(
         <TransactionModal holding={holding} onClose={() => setShowTxModal(false)} />,
+        document.body
+      )}
+      {showDeleteConfirm && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 w-80 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-gray-900">자산 삭제</h2>
+            <p className="text-sm text-gray-600">
+              <span className="font-bold text-gray-900">{holding.ticker}</span>를(을) 정말 삭제하시겠습니까?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => { remove(holding.id); setShowDeleteConfirm(false); }}
+                disabled={isRemoving}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>,
         document.body
       )}
     </tr>
