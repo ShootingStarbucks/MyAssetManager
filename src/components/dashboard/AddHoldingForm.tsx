@@ -18,6 +18,8 @@ export function AddHoldingForm() {
   const [quantity, setQuantity] = useState('');
   const [avgCost, setAvgCost] = useState('');
   const [formError, setFormError] = useState('');
+  const [tickerError, setTickerError] = useState('');
+  const [quantityError, setQuantityError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -29,10 +31,13 @@ export function AddHoldingForm() {
   function handleAssetTypeChange(type: AssetType) {
     setAssetType(type);
     setTicker('');
+    setQuantity('');
+    setAvgCost('');
     setSearchQuery('');
     setShowDropdown(false);
     setFormError('');
-    setAvgCost('');
+    setTickerError('');
+    setQuantityError('');
   }
 
   function handleTickerChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -40,6 +45,18 @@ export function AddHoldingForm() {
     setTicker(v);
     setSearchQuery(v);
     setShowDropdown(true);
+    if (v.trim()) setTickerError('');
+  }
+
+  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value;
+    setQuantity(v);
+    const qty = parseFloat(v);
+    if (v && (isNaN(qty) || qty <= 0)) {
+      setQuantityError('수량은 0보다 커야 합니다');
+    } else {
+      setQuantityError('');
+    }
   }
 
   function handleSelectResult(selectedTicker: string) {
@@ -47,6 +64,7 @@ export function AddHoldingForm() {
     setSearchQuery('');
     setShowDropdown(false);
     setFormError('');
+    setTickerError('');
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -54,8 +72,17 @@ export function AddHoldingForm() {
     setFormError('');
 
     const qty = parseFloat(quantity);
-    if (!ticker.trim()) { setFormError('티커를 입력하세요'); return; }
-    if (isNaN(qty) || qty <= 0) { setFormError('수량은 0보다 커야 합니다'); return; }
+    let hasError = false;
+
+    if (!ticker.trim()) {
+      setTickerError('티커를 입력하세요');
+      hasError = true;
+    }
+    if (isNaN(qty) || qty <= 0) {
+      setQuantityError(!quantity ? '수량을 입력하세요' : '수량은 0보다 커야 합니다');
+      hasError = true;
+    }
+    if (hasError) return;
 
     const avgCostNum = avgCost ? parseFloat(avgCost) : undefined;
     if (avgCost && (isNaN(avgCostNum!) || avgCostNum! <= 0)) {
@@ -66,7 +93,10 @@ export function AddHoldingForm() {
     addHolding(
       { ticker: ticker.trim().toUpperCase(), assetType, quantity: qty, avgCost: avgCostNum },
       {
-        onSuccess: () => { setTicker(''); setQuantity(''); setAvgCost(''); setSearchQuery(''); },
+        onSuccess: () => {
+          setTicker(''); setQuantity(''); setAvgCost(''); setSearchQuery('');
+          setTickerError(''); setQuantityError('');
+        },
         onError: (err) => setFormError(err.message),
       }
     );
@@ -104,7 +134,11 @@ export function AddHoldingForm() {
             onFocus={() => { if (ticker) setShowDropdown(true); }}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             placeholder={currentType.placeholder}
-            className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 pr-8 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent ${
+              tickerError
+                ? 'border-red-400 focus:ring-red-400'
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
           />
           {isSearching && (
             <div className="absolute right-2 top-2.5">
@@ -127,19 +161,29 @@ export function AddHoldingForm() {
               ))}
             </ul>
           )}
-          <p className="mt-1 text-xs text-gray-400">{currentType.hint}</p>
+          {tickerError
+            ? <p className="mt-1 text-xs text-red-500">{tickerError}</p>
+            : <p className="mt-1 text-xs text-gray-400">{currentType.hint}</p>
+          }
         </div>
 
         <div className="w-28">
           <input
             type="number"
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
+            onChange={handleQuantityChange}
             placeholder="수량"
-            min="0"
+            min="0.000001"
             step="any"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent ${
+              quantityError
+                ? 'border-red-400 focus:ring-red-400'
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
           />
+          {quantityError && (
+            <p className="mt-1 text-xs text-red-500 whitespace-nowrap">{quantityError}</p>
+          )}
         </div>
       </div>
 
