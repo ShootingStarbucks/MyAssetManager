@@ -73,7 +73,7 @@ describe('auth.ts — authorize() 콜백', () => {
     mockBcrypt.compare.mockResolvedValue(true)
 
     const authorize = getAuthorize()
-    const result = await authorize({ email: 'user@example.com', password: 'correctpass' })
+    const result = await authorize({ email: 'user@example.com', password: 'correctpass1' })
 
     expect(result).toEqual({ id: 'user-1', email: 'user@example.com', name: '홍길동' })
   })
