@@ -32,7 +32,7 @@ export function DashboardShell() {
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 왼쪽 패널: 자산 추가 + 요약 + 차트 */}
+          {/* 왼쪽 패널: 요약 + 자산 추가 */}
           <div className="lg:col-span-1 space-y-4">
             <PortfolioSummaryCard />
 
@@ -44,6 +44,16 @@ export function DashboardShell() {
                 <AddHoldingForm />
               </CardContent>
             </Card>
+          </div>
+
+          {/* 오른쪽 패널: 보유 자산 테이블 + 자산 비중 차트 */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card>
+              <CardHeader>
+                <h2 className="text-sm font-semibold text-gray-700">보유 자산</h2>
+              </CardHeader>
+              <PortfolioTable />
+            </Card>
 
             <Card>
               <CardHeader>
@@ -52,16 +62,6 @@ export function DashboardShell() {
               <CardContent className="px-2">
                 <AllocationChart />
               </CardContent>
-            </Card>
-          </div>
-
-          {/* 오른쪽 패널: 보유 자산 테이블 */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <h2 className="text-sm font-semibold text-gray-700">보유 자산</h2>
-              </CardHeader>
-              <PortfolioTable />
             </Card>
           </div>
         </div>
