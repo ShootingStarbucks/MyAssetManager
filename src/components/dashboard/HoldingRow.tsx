@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { History, Trash2 } from 'lucide-react';
 import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { ChangeBadge, AssetTypeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
@@ -174,26 +175,23 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
         )}
       </td>
       <td className="px-4 py-3 text-center">
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => setShowTxModal(true)}
             className="text-gray-400 hover:text-blue-500 transition-colors"
             title="거래 내역"
+            aria-label="거래 내역"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+            <History className="h-4 w-4" />
           </button>
           <button
             onClick={() => setShowDeleteConfirm(true)}
             disabled={isRemoving}
             className="text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors"
             title="삭제"
+            aria-label="삭제"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </td>
