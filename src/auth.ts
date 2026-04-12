@@ -4,10 +4,11 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { authConfig } from './auth.config';
+import { emailSchema, passwordSchema } from '@/lib/auth-schemas';
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: emailSchema,
+  password: passwordSchema,
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

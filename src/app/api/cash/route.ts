@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import type { ApiError } from '@/types/api.types';
 
 const updateSchema = z.object({
-  cashBalance: z.number().min(0, '현금 잔액은 0 이상이어야 합니다'),
+  cashBalance: z.number().min(0, '현금 잔액은 0 이상이어야 합니다').max(1_000_000_000_000, '현금 잔액이 허용 범위를 초과했습니다'),
 });
 
 export async function GET() {
