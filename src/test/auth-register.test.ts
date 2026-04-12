@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
+// Mock rate-limit so in-memory state doesn't bleed between tests
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimit: vi.fn(() => ({ success: true, remaining: 10, retryAfterMs: 0 })),
+  getClientIp: vi.fn(() => '127.0.0.1'),
+  rateLimitExceededResponse: vi.fn(() => ({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' })),
+}))
+
 // Mock @/lib/prisma before importing the route
 vi.mock('@/lib/prisma', () => ({
   prisma: {
