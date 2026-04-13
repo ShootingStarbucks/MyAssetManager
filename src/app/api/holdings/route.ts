@@ -78,9 +78,27 @@ export async function POST(req: NextRequest) {
     // NETWORK_ERROR / RATE_LIMITED: 검증 불가 상태이므로 저장 허용
   }
 
+  const userId = session.user!.id;
+
   try {
-    const holding = await prisma.holding.create({
-      data: { userId: session.user.id, ticker, assetType, quantity, avgCost },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const holding = await prisma.$transaction(async (tx: any) => {
+      const created = await tx.holding.create({
+        data: { userId, ticker, assetType, quantity, avgCost },
+      });
+      await tx.transaction.create({
+        data: {
+          userId,
+          holdingId: created.id,
+          ticker: created.ticker,
+          assetType: created.assetType,
+          type: 'BUY',
+          quantity,
+          price: avgCost ?? 0,
+          note: '초기 보유량',
+        },
+      });
+      return created;
     });
     return NextResponse.json({ holding }, { status: 201 });
   } catch (e: unknown) {
