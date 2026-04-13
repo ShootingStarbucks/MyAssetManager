@@ -132,5 +132,6 @@ Required in `.env.local`:
 DATABASE_URL="file:./prisma/dev.db"
 AUTH_SECRET="..."
 FINNHUB_API_KEY="..."       # https://finnhub.io/register (server-only, never NEXT_PUBLIC_)
+KRX_API_KEY="..."           # https://openapi.krx.co.kr (optional, server-only — falls back to Yahoo Finance if absent)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```

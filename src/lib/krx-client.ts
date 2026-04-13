@@ -37,8 +37,8 @@ async function fetchAllStocks(): Promise<SearchResult[]> {
           allStocks.push({ ticker: r.ISU_SRT_CD, name: r.ISU_NM });
         }
       }
-    } catch {
-      // 해당 마켓 fetch 실패 시 건너뜀
+    } catch (err) {
+      console.error(`[krx] Failed to fetch market ${bld}:`, err);
     }
   }
 

@@ -132,5 +132,6 @@ Edge Runtime 제약으로 두 파일로 분리:
 DATABASE_URL="file:./prisma/dev.db"
 AUTH_SECRET="..."
 FINNHUB_API_KEY="..."       # https://finnhub.io/register (서버 전용, NEXT_PUBLIC_ 금지)
+KRX_API_KEY="..."           # https://openapi.krx.co.kr (선택 사항, 서버 전용 — 없으면 Yahoo Finance로 폴백)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```
