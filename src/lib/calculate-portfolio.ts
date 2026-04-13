@@ -55,13 +55,15 @@ export function calculatePortfolioSummary(
     return sum + priceKRW * h.quantity;
   }, 0);
 
-  const totalValue = holdingsValue + cashBalance;
+  // 음수 현금은 총 자산 계산에서 0으로 처리 (미설정 또는 과차감 방지)
+  const cashForTotal = Math.max(0, cashBalance);
+  const totalValue = holdingsValue + cashForTotal;
 
   const totalYesterdayValue = validHoldings.reduce((sum, h) => {
     const prevPrice = h.quote!.price - h.quote!.change;
     const prevPriceKRW = toKRW(prevPrice, h.quote!.currency);
     return sum + prevPriceKRW * h.quantity;
-  }, cashBalance); // 현금은 전일 대비 변동 없음
+  }, cashForTotal); // 현금은 전일 대비 변동 없음 (음수 현금은 0으로 처리)
 
   const totalChange = totalValue - totalYesterdayValue;
   const totalChangePercent =

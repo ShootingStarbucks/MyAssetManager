@@ -150,12 +150,18 @@ export async function POST(req: NextRequest) {
           data: { cashBalance: { increment: proceeds } },
         });
       } else {
-        // 매수: 현금 차감 (수수료 포함)
+        // 매수: 현금이 설정된 경우에만 차감 (수수료 포함)
         const cost = priceKRW * quantity + feeKRW;
-        await tx.user.update({
+        const currentUser = await tx.user.findUnique({
           where: { id: userId },
-          data: { cashBalance: { decrement: cost } },
+          select: { cashBalance: true },
         });
+        if (currentUser && currentUser.cashBalance > 0) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { cashBalance: { decrement: cost } },
+          });
+        }
       }
 
       return { transaction };
