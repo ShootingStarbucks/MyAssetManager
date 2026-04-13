@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { searchUsStocks } from '@/lib/finnhub-client';
-import { searchKrStocks } from '@/lib/yahoo-finance-client';
+import { searchKrxStocks } from '@/lib/krx-client';
 import { searchCrypto } from '@/lib/coingecko-client';
 import type { ApiError, SearchResult } from '@/types/api.types';
 
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     if (assetType === 'us-stock') {
       results = await searchUsStocks(q);
     } else if (assetType === 'kr-stock') {
-      results = await searchKrStocks(q);
+      results = await searchKrxStocks(q);
     } else {
       results = await searchCrypto(q);
     }
