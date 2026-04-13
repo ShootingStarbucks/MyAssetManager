@@ -27,6 +27,8 @@ export async function fetchKrStockQuote(ticker: string): Promise<NormalizedQuote
       const prevClose = ((quote as Record<string, unknown>).regularMarketPreviousClose as number | undefined) ?? price;
       const change = price - prevClose;
       const changePercent = prevClose !== 0 ? (change / prevClose) * 100 : 0;
+      const name = ((quote as Record<string, unknown>).longName as string | undefined)
+        ?? ((quote as Record<string, unknown>).shortName as string | undefined);
 
       return {
         ticker: ticker.toUpperCase(),
@@ -35,6 +37,7 @@ export async function fetchKrStockQuote(ticker: string): Promise<NormalizedQuote
         change,
         changePercent,
         currency: 'KRW',
+        ...(name ? { name } : {}),
       };
     } catch (e) {
       lastError = e as Error;

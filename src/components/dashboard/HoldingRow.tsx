@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { History, Pencil, Trash2 } from 'lucide-react';
 import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { ChangeBadge, AssetTypeBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
@@ -20,6 +21,10 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
   const [isEditingAvgCost, setIsEditingAvgCost] = useState(false);
   const [editAvgCost, setEditAvgCost] = useState(holding.avgCost != null ? String(holding.avgCost) : '');
   const [showTxModal, setShowTxModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [modalQty, setModalQty] = useState('');
+  const [modalAvgCost, setModalAvgCost] = useState('');
 
   const { mutate: remove, isPending: isRemoving } = useRemoveHolding();
   const { mutate: update, isPending: isUpdating } = useUpdateHolding();
@@ -47,11 +52,33 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
     );
   }
 
+  function openEditModal() {
+    setModalQty(String(holding.quantity));
+    setModalAvgCost(holding.avgCost != null ? String(holding.avgCost) : '');
+    setShowEditModal(true);
+  }
+
+  function handleEditSave() {
+    const qty = parseFloat(modalQty);
+    if (isNaN(qty) || qty <= 0) return;
+    const cost = modalAvgCost === '' ? null : parseFloat(modalAvgCost);
+    if (cost !== null && (isNaN(cost) || cost <= 0)) return;
+    update(
+      { id: holding.id, quantity: qty, avgCost: cost },
+      { onSuccess: () => setShowEditModal(false) }
+    );
+  }
+
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900">{holding.ticker}</span>
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-900">{holding.ticker}</span>
+            {holding.assetType === 'kr-stock' && quote?.name && (
+              <span className="text-xs text-gray-400">{quote.name}</span>
+            )}
+          </div>
           <AssetTypeBadge type={holding.assetType} />
         </div>
       </td>
@@ -173,31 +200,127 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
         )}
       </td>
       <td className="px-4 py-3 text-center">
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => setShowTxModal(true)}
             className="text-gray-400 hover:text-blue-500 transition-colors"
             title="거래 내역"
+            aria-label="거래 내역"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+            <History className="h-4 w-4" />
           </button>
           <button
-            onClick={() => remove(holding.id)}
+            onClick={openEditModal}
+            className="text-gray-400 hover:text-amber-500 transition-colors"
+            title="편집"
+            aria-label="편집"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={isRemoving}
             className="text-gray-400 hover:text-red-500 disabled:opacity-50 transition-colors"
             title="삭제"
+            aria-label="삭제"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </td>
       {showTxModal && createPortal(
         <TransactionModal holding={holding} onClose={() => setShowTxModal(false)} />,
+        document.body
+      )}
+      {showEditModal && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 w-80 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-gray-900">
+              자산 편집 — <span className="text-blue-600">{holding.ticker}</span>
+            </h2>
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-500">수량</span>
+                <input
+                  type="number"
+                  value={modalQty}
+                  onChange={(e) => setModalQty(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  step="any"
+                  placeholder="수량 입력"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-500">
+                  평단가 ({holding.quote?.currency === 'USD' ? 'USD' : '원'})
+                </span>
+                <input
+                  type="number"
+                  value={modalAvgCost}
+                  onChange={(e) => setModalAvgCost(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  step="any"
+                  placeholder="평단가 입력 (선택)"
+                />
+              </label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleEditSave}
+                disabled={isUpdating}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {isUpdating ? '저장 중...' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {showDeleteConfirm && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 w-80 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-gray-900">자산 삭제</h2>
+            <p className="text-sm text-gray-600">
+              <span className="font-bold text-gray-900">{holding.ticker}</span>를(을) 정말 삭제하시겠습니까?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => { remove(holding.id); setShowDeleteConfirm(false); }}
+                disabled={isRemoving}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>,
         document.body
       )}
     </tr>
