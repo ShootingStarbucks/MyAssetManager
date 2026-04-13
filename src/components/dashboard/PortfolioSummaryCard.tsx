@@ -85,7 +85,20 @@ export function PortfolioSummaryCard() {
             </div>
             {/* 현금 잔액 */}
             <div className="flex items-center justify-between py-2 border-t border-gray-100 mt-2">
-              <span className="text-xs text-gray-500">보유 현금</span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">보유 현금</span>
+                {!isEditingCash && (
+                  <button
+                    onClick={handleCashEdit}
+                    className="text-gray-400 hover:text-blue-500 transition-colors"
+                    title="현금 잔액 수정"
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               {isEditingCash ? (
                 <div className="flex items-center gap-1">
                   <input
@@ -112,13 +125,14 @@ export function PortfolioSummaryCard() {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={handleCashEdit}
-                  className="text-xs font-medium text-gray-700 hover:text-blue-600 transition-colors"
-                  title="클릭하여 현금 잔액 수정"
-                >
-                  {formatKRW(cashBalance)}
-                </button>
+                <div className="flex items-center gap-1">
+                  {cashBalance < 0 && (
+                    <span className="text-xs text-red-500">(거래 내역 초과)</span>
+                  )}
+                  <span className={`text-xs font-medium ${cashBalance < 0 ? 'text-red-600' : 'text-gray-700'}`}>
+                    {formatKRW(cashBalance)}
+                  </span>
+                </div>
               )}
             </div>
 
