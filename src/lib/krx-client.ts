@@ -1,11 +1,12 @@
 import type { SearchResult } from '@/types/api.types';
+import { searchKrStocksByName } from '@/lib/kr-stock-names';
 
 const API_KEY = process.env.KRX_API_KEY;
 const BASE_URL = 'https://openapi.krx.co.kr/commons/bldServlet/getJsonData.do';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24시간
 
 if (!API_KEY) {
-  console.warn('[krx] KRX_API_KEY is not set. 한국 주식 이름 검색은 Yahoo Finance로 폴백됩니다.');
+  console.warn('[krx] KRX_API_KEY is not set. 한국 주식 이름 검색은 내장 목록으로 폴백됩니다.');
 }
 
 interface KrxStockRecord {
@@ -57,30 +58,51 @@ async function getStockList(): Promise<SearchResult[]> {
 }
 
 export async function searchKrxStocks(query: string): Promise<SearchResult[]> {
-  if (!API_KEY) {
-    const { searchKrStocks } = await import('@/lib/yahoo-finance-client');
-    return searchKrStocks(query);
-  }
-
-  const stocks = await getStockList();
-  const q = query.trim().toLowerCase();
+  const q = query.trim();
   if (!q) return [];
 
-  // 이름 완전일치 > 이름 starts-with > 이름 contains / 코드 starts-with
-  const exact: SearchResult[] = [];
-  const startsWith: SearchResult[] = [];
-  const contains: SearchResult[] = [];
+  // KRX API 사용 가능한 경우 시도
+  if (API_KEY) {
+    const stocks = await getStockList();
+    if (stocks.length > 0) {
+      const lower = q.toLowerCase();
+      const exact: SearchResult[] = [];
+      const startsWith: SearchResult[] = [];
+      const contains: SearchResult[] = [];
 
-  for (const s of stocks) {
-    const name = s.name.toLowerCase();
-    if (name === q) {
-      exact.push(s);
-    } else if (name.startsWith(q) || s.ticker.startsWith(q)) {
-      startsWith.push(s);
-    } else if (name.includes(q)) {
-      contains.push(s);
+      for (const s of stocks) {
+        const name = s.name.toLowerCase();
+        if (name === lower) {
+          exact.push(s);
+        } else if (name.startsWith(lower) || s.ticker.startsWith(lower)) {
+          startsWith.push(s);
+        } else if (name.includes(lower)) {
+          contains.push(s);
+        }
+      }
+
+      const results = [...exact, ...startsWith, ...contains].slice(0, 8);
+      if (results.length > 0) return results;
+    } else {
+      console.warn('[krx] KRX API가 빈 목록을 반환했습니다. 내장 종목 목록으로 폴백합니다.');
     }
   }
 
-  return [...exact, ...startsWith, ...contains].slice(0, 8);
+  // 내장 한국 종목 목록으로 폴백 (KRX API 미설정 또는 실패 시)
+  const localResults = searchKrStocksByName(q);
+  if (localResults.length > 0) {
+    return localResults.map((s) => ({ ticker: s.ticker, name: s.name }));
+  }
+
+  // 티커 코드 형식(숫자)이 아닌 경우 Yahoo Finance로 추가 시도
+  if (!/^\d/.test(q)) {
+    try {
+      const { searchKrStocks } = await import('@/lib/yahoo-finance-client');
+      return searchKrStocks(q);
+    } catch {
+      // Yahoo Finance 실패 시 무시
+    }
+  }
+
+  return [];
 }
