@@ -59,11 +59,11 @@ export function useUpdateHolding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, quantity, avgCost }: { id: string; quantity?: number; avgCost?: number | null }) => {
+    mutationFn: async ({ id, quantity, avgCost, currentPrice }: { id: string; quantity?: number; avgCost?: number | null; currentPrice?: number | null }) => {
       const res = await fetch(`/api/holdings/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity, avgCost }),
+        body: JSON.stringify({ quantity, avgCost, currentPrice }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message ?? '수량 수정에 실패했습니다');

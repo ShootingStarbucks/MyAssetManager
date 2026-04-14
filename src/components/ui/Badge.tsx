@@ -38,3 +38,11 @@ export function AssetTypeBadge({ type }: { type: string }) {
     </span>
   );
 }
+
+export function ManualPriceBadge() {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+      현재가 미입력
+    </span>
+  );
+}
