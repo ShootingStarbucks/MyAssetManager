@@ -32,7 +32,7 @@ model Holding {
   transactions Transaction[]
   name         String?
   exchange     String?
-  currency     String        @default("KRW")
+  currency     String?
   purchaseDate DateTime?
   memo         String?
 
