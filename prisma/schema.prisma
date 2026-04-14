@@ -8,15 +8,27 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  email         String        @unique
-  name          String?
-  password      String?
-  cashBalance   Float         @default(0)
-  holdings      Holding[]
-  transactions  Transaction[]
-  cashAccounts  CashAccount[]
-  createdAt     DateTime      @default(now())
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  password           String?
+  cashBalance        Float               @default(0)
+  targetAllocations  String?
+  holdings           Holding[]
+  transactions       Transaction[]
+  cashAccounts       CashAccount[]
+  snapshots          PortfolioSnapshot[]
+  createdAt          DateTime            @default(now())
+}
+
+model PortfolioSnapshot {
+  id         String   @id @default(cuid())
+  userId     String
+  totalValue Float
+  snapDate   DateTime
+  breakdown  String   // JSON: { stockRatio, cryptoRatio, cashRatio }
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Holding {
