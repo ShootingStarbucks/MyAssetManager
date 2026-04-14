@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useHoldings } from './use-holdings';
 import { useAssetQuotes } from './use-asset-quotes';
-import { useCashBalance } from './use-cash';
+import { useCashBalance, useCashAccounts } from './use-cash';
 import { calculatePortfolioSummary, toKRW } from '@/lib/calculate-portfolio';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 import type { QuoteResult } from '@/types/asset.types';
@@ -10,6 +10,7 @@ export function usePortfolioSummary() {
   const { data: holdings = [], isLoading: holdingsLoading } = useHoldings();
   const { data: quoteResults = [], isLoading: quotesLoading, isError, dataUpdatedAt } = useAssetQuotes(holdings);
   const { data: cashBalance = 0 } = useCashBalance();
+  const { data: cashAccounts = [] } = useCashAccounts();
 
   const holdingsWithQuotes: HoldingWithQuote[] = useMemo(() => {
     const quoteMap = new Map<string, QuoteResult>(
@@ -25,8 +26,8 @@ export function usePortfolioSummary() {
   }, [holdings, quoteResults]);
 
   const summary = useMemo(
-    () => calculatePortfolioSummary(holdingsWithQuotes, cashBalance),
-    [holdingsWithQuotes, cashBalance]
+    () => calculatePortfolioSummary(holdingsWithQuotes, cashAccounts, cashBalance),
+    [holdingsWithQuotes, cashAccounts, cashBalance]
   );
 
   return {
