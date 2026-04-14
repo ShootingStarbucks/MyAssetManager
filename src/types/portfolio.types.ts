@@ -8,6 +8,7 @@ export interface Holding {
   exchange?: string | null;     // 거래소
   quantity: number;
   avgCost?: number | null;
+  currentPrice?: number | null; // 수동 입력 현재가
   currency: Currency;           // 통화 (default "KRW")
   purchaseDate?: string | null; // 최초 매수일 (ISO string)
   memo?: string | null;         // 메모

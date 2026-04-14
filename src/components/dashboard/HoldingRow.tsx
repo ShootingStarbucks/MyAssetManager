@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { History, Pencil, Trash2 } from 'lucide-react';
 import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
-import { ChangeBadge, AssetTypeBadge } from '@/components/ui/Badge';
+import { AssetTypeBadge, ManualPriceBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
 import { toKRW, calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
 import { TransactionModal } from './TransactionModal';
@@ -25,6 +25,8 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [modalQty, setModalQty] = useState('');
   const [modalAvgCost, setModalAvgCost] = useState('');
+  const [isEditingManualPrice, setIsEditingManualPrice] = useState(false);
+  const [editManualPrice, setEditManualPrice] = useState(holding.currentPrice != null ? String(holding.currentPrice) : '');
 
   const { mutate: remove, isPending: isRemoving } = useRemoveHolding();
   const { mutate: update, isPending: isUpdating } = useUpdateHolding();
@@ -49,6 +51,15 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
     update(
       { id: holding.id, avgCost: cost },
       { onSuccess: () => setIsEditingAvgCost(false) }
+    );
+  }
+
+  function handleUpdateManualPrice() {
+    const price = editManualPrice === '' ? null : parseFloat(editManualPrice);
+    if (price !== null && (isNaN(price) || price <= 0)) return;
+    update(
+      { id: holding.id, currentPrice: price },
+      { onSuccess: () => setIsEditingManualPrice(false) }
     );
   }
 
@@ -169,7 +180,50 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
             )}
           </div>
         ) : (
-          <span className="text-red-400 text-xs">조회 실패</span>
+          <div className="flex flex-col items-end gap-1">
+            {!isEditingManualPrice && (
+              <button
+                onClick={() => { setIsEditingManualPrice(true); setEditManualPrice(holding.currentPrice != null ? String(holding.currentPrice) : ''); }}
+                className="flex items-center gap-1"
+                title="현재가 직접 입력"
+              >
+                {holding.currentPrice != null ? (
+                  <span className="text-sm text-gray-700 hover:text-blue-600 transition-colors">
+                    {formatPrice(holding.currentPrice, holding.currency ?? 'KRW')}
+                  </span>
+                ) : (
+                  <ManualPriceBadge />
+                )}
+              </button>
+            )}
+            {isEditingManualPrice && (
+              <div className="flex items-center justify-end gap-1">
+                <input
+                  type="number"
+                  value={editManualPrice}
+                  onChange={(e) => setEditManualPrice(e.target.value)}
+                  className="w-24 px-2 py-1 border border-yellow-300 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                  min="0"
+                  step="any"
+                  placeholder={holding.currency === 'USD' ? 'USD' : '원'}
+                  autoFocus
+                />
+                <button
+                  onClick={handleUpdateManualPrice}
+                  disabled={isUpdating}
+                  className="text-xs px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+                >
+                  확인
+                </button>
+                <button
+                  onClick={() => setIsEditingManualPrice(false)}
+                  className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                >
+                  취소
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </td>
       {/* 수익률 (평균매수단가 기준) */}
