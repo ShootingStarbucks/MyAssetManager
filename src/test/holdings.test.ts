@@ -5,15 +5,26 @@ vi.mock('@/auth', () => ({
   auth: vi.fn(),
 }))
 
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    holding: {
-      findMany: vi.fn(),
-      count: vi.fn(),
-      create: vi.fn(),
+vi.mock('@/lib/prisma', () => {
+  const holdingCreate = vi.fn()
+  const transactionCreate = vi.fn()
+  return {
+    prisma: {
+      holding: {
+        findMany: vi.fn(),
+        count: vi.fn(),
+        create: holdingCreate,
+      },
+      $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
+        const tx = {
+          holding: { create: holdingCreate },
+          transaction: { create: transactionCreate },
+        }
+        return cb(tx)
+      }),
     },
-  },
-}))
+  }
+})
 
 vi.mock('@/lib/finnhub-client', () => ({
   fetchUsStockQuote: vi.fn(),

@@ -9,8 +9,8 @@ vi.mock('@/lib/finnhub-client', () => ({
   searchUsStocks: vi.fn(),
 }))
 
-vi.mock('@/lib/yahoo-finance-client', () => ({
-  searchKrStocks: vi.fn(),
+vi.mock('@/lib/krx-client', () => ({
+  searchKrxStocks: vi.fn(),
 }))
 
 vi.mock('@/lib/coingecko-client', () => ({
@@ -20,12 +20,12 @@ vi.mock('@/lib/coingecko-client', () => ({
 import { GET } from '@/app/api/search/route'
 import { auth } from '@/auth'
 import { searchUsStocks } from '@/lib/finnhub-client'
-import { searchKrStocks } from '@/lib/yahoo-finance-client'
+import { searchKrxStocks } from '@/lib/krx-client'
 import { searchCrypto } from '@/lib/coingecko-client'
 
 const mockAuth = auth as ReturnType<typeof vi.fn>
 const mockSearchUsStocks = searchUsStocks as ReturnType<typeof vi.fn>
-const mockSearchKrStocks = searchKrStocks as ReturnType<typeof vi.fn>
+const mockSearchKrStocks = searchKrxStocks as ReturnType<typeof vi.fn>
 const mockSearchCrypto = searchCrypto as ReturnType<typeof vi.fn>
 
 const AUTHED_SESSION = { user: { id: 'user-1', email: 'test@example.com' } }

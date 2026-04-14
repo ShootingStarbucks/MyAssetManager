@@ -11,7 +11,7 @@ const REGISTER_LIMIT = { windowMs: 15 * 60 * 1000, max: 5 };
 const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
-  name: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
+  name: z.string().min(1, '이름은 1자 이상이어야 합니다').optional(),
 });
 
 export async function POST(req: NextRequest) {
