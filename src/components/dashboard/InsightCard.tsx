@@ -29,8 +29,11 @@ export function InsightCard() {
     fetch('/api/insights')
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.id) {
-          setInsight(data);
+        const raw = data?.insight ?? data;
+        if (raw && raw.id) {
+          const parsedDetails =
+            typeof raw.details === 'string' ? JSON.parse(raw.details) : raw.details;
+          setInsight({ ...raw, details: parsedDetails });
         }
       })
       .catch(() => {
@@ -53,7 +56,10 @@ export function InsightCard() {
         return;
       }
       const data = await res.json();
-      setInsight(data);
+      const raw = data?.insight ?? data;
+      const parsedDetails =
+        typeof raw.details === 'string' ? JSON.parse(raw.details) : raw.details;
+      setInsight({ ...raw, details: parsedDetails });
       setIsExpanded(true);
     } catch {
       setError('인사이트 생성 중 오류가 발생했습니다.');
