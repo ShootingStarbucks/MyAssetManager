@@ -20,7 +20,7 @@ export function useAddHolding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { ticker: string; assetType: AssetType; quantity: number; avgCost?: number }) => {
+    mutationFn: async (payload: { ticker: string; assetType: AssetType; quantity: number; avgCost?: number; exchange?: string; currency?: 'KRW' | 'USD'; purchaseDate?: string; memo?: string }) => {
       const res = await fetch('/api/holdings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

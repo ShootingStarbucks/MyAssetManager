@@ -1,4 +1,4 @@
-import type { HoldingWithQuote, AllocationSlice, PortfolioSummary } from '@/types/portfolio.types';
+import type { HoldingWithQuote, AllocationSlice, PortfolioSummary, CashAccount } from '@/types/portfolio.types';
 
 // USD → KRW 환율 (실제 서비스에서는 환율 API 사용 권장)
 // 현재는 고정 환율 사용 (추후 실시간 환율로 대체 가능)
@@ -44,9 +44,17 @@ export function calculateUnrealizedPnL(holding: HoldingWithQuote): {
   return { unrealizedPnL, unrealizedPnLPercent, avgCostKRW };
 }
 
+const ASSET_CLASS_COLORS: Record<string, string> = {
+  'us-stock': '#3b82f6',
+  'kr-stock': '#3b82f6',
+  'crypto': '#f59e0b',
+  'cash': '#10b981',
+};
+
 export function calculatePortfolioSummary(
   holdings: HoldingWithQuote[],
-  cashBalance = 0
+  cashAccounts: CashAccount[] = [],
+  legacyCashBalance = 0
 ): PortfolioSummary {
   const validHoldings = holdings.filter((h) => h.quote !== null);
 
@@ -55,8 +63,11 @@ export function calculatePortfolioSummary(
     return sum + priceKRW * h.quantity;
   }, 0);
 
+  // 현금 계좌 합산 + 레거시 현금 잔액
+  const cashAccountsTotal = cashAccounts.map(a => a.amount).reduce((s, a) => s + a, 0);
+  const totalCash = cashAccountsTotal + legacyCashBalance;
   // 음수 현금은 총 자산 계산에서 0으로 처리 (미설정 또는 과차감 방지)
-  const cashForTotal = Math.max(0, cashBalance);
+  const cashForTotal = Math.max(0, totalCash);
   const totalValue = holdingsValue + cashForTotal;
 
   const totalYesterdayValue = validHoldings.reduce((sum, h) => {
@@ -77,18 +88,18 @@ export function calculatePortfolioSummary(
       assetType: h.assetType,
       value,
       percentage: totalValue > 0 ? (value / totalValue) * 100 : 0,
-      color: CHART_COLORS[i % CHART_COLORS.length],
+      color: ASSET_CLASS_COLORS[h.assetType] ?? CHART_COLORS[i % CHART_COLORS.length],
     };
   });
 
   // 현금 슬라이스 추가
-  if (cashBalance > 0) {
+  if (cashForTotal > 0) {
     allocations.push({
       ticker: '현금',
       assetType: 'cash',
-      value: cashBalance,
-      percentage: totalValue > 0 ? (cashBalance / totalValue) * 100 : 0,
-      color: '#6B7280', // gray-500
+      value: cashForTotal,
+      percentage: totalValue > 0 ? (cashForTotal / totalValue) * 100 : 0,
+      color: ASSET_CLASS_COLORS['cash'],
     });
   }
 
