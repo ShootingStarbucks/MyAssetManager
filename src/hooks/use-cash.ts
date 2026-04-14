@@ -1,4 +1,53 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { CashAccount } from '@/types/portfolio.types';
+
+const CASH_QUERY_KEY = ['cashAccounts'];
+
+export function useCashAccounts() {
+  return useQuery<CashAccount[]>({
+    queryKey: CASH_QUERY_KEY,
+    queryFn: async () => {
+      const res = await fetch('/api/cash/accounts');
+      if (!res.ok) throw new Error('Failed to fetch cash accounts');
+      return res.json();
+    },
+  });
+}
+
+export function useAddCashAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Omit<CashAccount, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+      const res = await fetch('/api/cash/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      if (!res.ok) throw new Error('Failed to add cash account');
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: CASH_QUERY_KEY }),
+  });
+}
+
+export function useUpdateCashAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<CashAccount> & { id: string }) => {
+      const res = await fetch(`/api/cash/accounts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      if (!res.ok) throw new Error('Failed to update cash account');
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: CASH_QUERY_KEY }),
+  });
+}
+
+export function useRemoveCashAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/cash/accounts/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete cash account');
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: CASH_QUERY_KEY }),
+  });
+}
 
 export function useCashBalance() {
   return useQuery({
