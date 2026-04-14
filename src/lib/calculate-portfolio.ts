@@ -195,15 +195,34 @@ export function calculatePortfolioSummary(
   const totalChangePercent =
     totalYesterdayValue !== 0 ? (totalChange / totalYesterdayValue) * 100 : 0;
 
-  const allocations: AllocationSlice[] = validHoldings.map((h, i) => {
+  const STOCK_SHADES  = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
+  const CRYPTO_SHADES = ['#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#fef3c7'];
+  const CASH_SHADES   = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5'];
+
+  const shadeCounters: Record<string, number> = { stock: 0, crypto: 0, cash: 0 };
+
+  const allocations: AllocationSlice[] = validHoldings.map((h) => {
     const priceKRW = toKRW(h.quote!.price, h.quote!.currency);
     const value = priceKRW * h.quantity;
+
+    let color: string;
+    if (h.assetType === 'us-stock' || h.assetType === 'kr-stock') {
+      color = STOCK_SHADES[shadeCounters.stock % 5];
+      shadeCounters.stock += 1;
+    } else if (h.assetType === 'crypto') {
+      color = CRYPTO_SHADES[shadeCounters.crypto % 5];
+      shadeCounters.crypto += 1;
+    } else {
+      color = CASH_SHADES[shadeCounters.cash % 5];
+      shadeCounters.cash += 1;
+    }
+
     return {
       ticker: h.ticker,
       assetType: h.assetType,
       value,
       percentage: totalValue > 0 ? (value / totalValue) * 100 : 0,
-      color: ASSET_CLASS_COLORS[h.assetType] ?? CHART_COLORS[i % CHART_COLORS.length],
+      color,
     };
   });
 
