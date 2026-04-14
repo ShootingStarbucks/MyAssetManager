@@ -26,8 +26,8 @@ const CHART_COLORS = [
   '#14B8A6', // teal-500
 ];
 
-export function toKRW(price: number, currency: 'KRW' | 'USD'): number {
-  return currency === 'USD' ? price * USD_TO_KRW : price;
+export function toKRW(price: number, currency: string, exchangeRate: number = USD_TO_KRW): number {
+  return currency === 'USD' ? price * exchangeRate : price;
 }
 
 export function calculateTotalValue(holdings: HoldingWithQuote[]): number {
@@ -169,12 +169,13 @@ export function calculateRebalanceSuggestions(
 export function calculatePortfolioSummary(
   holdings: HoldingWithQuote[],
   cashAccounts: CashAccount[] = [],
-  legacyCashBalance = 0
+  legacyCashBalance = 0,
+  exchangeRate: number = USD_TO_KRW
 ): PortfolioSummary {
   const validHoldings = holdings.filter((h) => h.quote !== null);
 
   const holdingsValue = validHoldings.reduce((sum, h) => {
-    const priceKRW = toKRW(h.quote!.price, h.quote!.currency);
+    const priceKRW = toKRW(h.quote!.price, h.quote!.currency, exchangeRate);
     return sum + priceKRW * h.quantity;
   }, 0);
 
@@ -187,7 +188,7 @@ export function calculatePortfolioSummary(
 
   const totalYesterdayValue = validHoldings.reduce((sum, h) => {
     const prevPrice = h.quote!.price - h.quote!.change;
-    const prevPriceKRW = toKRW(prevPrice, h.quote!.currency);
+    const prevPriceKRW = toKRW(prevPrice, h.quote!.currency, exchangeRate);
     return sum + prevPriceKRW * h.quantity;
   }, cashForTotal); // 현금은 전일 대비 변동 없음 (음수 현금은 0으로 처리)
 
@@ -202,7 +203,7 @@ export function calculatePortfolioSummary(
   const shadeCounters: Record<string, number> = { stock: 0, crypto: 0, cash: 0 };
 
   const allocations: AllocationSlice[] = validHoldings.map((h) => {
-    const priceKRW = toKRW(h.quote!.price, h.quote!.currency);
+    const priceKRW = toKRW(h.quote!.price, h.quote!.currency, exchangeRate);
     const value = priceKRW * h.quantity;
 
     let color: string;
