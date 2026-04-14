@@ -1,4 +1,13 @@
-import type { HoldingWithQuote, AllocationSlice, PortfolioSummary, CashAccount } from '@/types/portfolio.types';
+import type {
+  HoldingWithQuote,
+  AllocationSlice,
+  PortfolioSummary,
+  CashAccount,
+  ConcentrationWarning,
+  RiskProfile,
+  RiskMetrics,
+  RebalanceSuggestion,
+} from '@/types/portfolio.types';
 
 // USD → KRW 환율 (실제 서비스에서는 환율 API 사용 권장)
 // 현재는 고정 환율 사용 (추후 실시간 환율로 대체 가능)
@@ -50,6 +59,112 @@ const ASSET_CLASS_COLORS: Record<string, string> = {
   'crypto': '#f59e0b',
   'cash': '#10b981',
 };
+
+// Re-export RebalanceSuggestion so callers can import it from this module
+export type { RebalanceSuggestion };
+
+export function calculateConcentrationWarnings(allocations: AllocationSlice[]): ConcentrationWarning[] {
+  const warnings: ConcentrationWarning[] = [];
+  // Single ticker checks
+  for (const alloc of allocations) {
+    if (alloc.ticker && alloc.percentage > 50) {
+      warnings.push({
+        type: 'DANGER',
+        ticker: alloc.ticker,
+        ratio: alloc.percentage,
+        message: `${alloc.ticker} 비중이 ${alloc.percentage.toFixed(1)}%로 너무 높습니다 (위험)`,
+      });
+    } else if (alloc.ticker && alloc.percentage > 30) {
+      warnings.push({
+        type: 'WARNING',
+        ticker: alloc.ticker,
+        ratio: alloc.percentage,
+        message: `${alloc.ticker} 비중이 ${alloc.percentage.toFixed(1)}%입니다 (주의)`,
+      });
+    }
+  }
+  // Asset class checks: sum stock ratio and crypto ratio
+  const stockTotal = allocations
+    .filter((a) => a.assetType === 'us-stock' || a.assetType === 'kr-stock')
+    .reduce((s, a) => s + a.percentage, 0);
+  const cryptoTotal = allocations
+    .filter((a) => a.assetType === 'crypto')
+    .reduce((s, a) => s + a.percentage, 0);
+  if (stockTotal > 80) {
+    warnings.push({
+      type: 'ASSET_CLASS',
+      assetType: 'stock',
+      ratio: stockTotal,
+      message: `주식 비중이 ${stockTotal.toFixed(1)}%로 집중되어 있습니다`,
+    });
+  }
+  if (cryptoTotal > 80) {
+    warnings.push({
+      type: 'ASSET_CLASS',
+      assetType: 'crypto',
+      ratio: cryptoTotal,
+      message: `암호화폐 비중이 ${cryptoTotal.toFixed(1)}%로 집중되어 있습니다`,
+    });
+  }
+  return warnings;
+}
+
+export function calculateRiskProfile(allocations: AllocationSlice[]): RiskProfile {
+  const cryptoTotal = allocations
+    .filter((a) => a.assetType === 'crypto')
+    .reduce((s, a) => s + a.percentage, 0);
+  const stockTotal = allocations
+    .filter((a) => a.assetType === 'us-stock' || a.assetType === 'kr-stock')
+    .reduce((s, a) => s + a.percentage, 0);
+  if (cryptoTotal >= 50) return 'AGGRESSIVE';
+  if (cryptoTotal >= 30 || stockTotal >= 70) return 'MODERATE';
+  return 'CONSERVATIVE';
+}
+
+export function calculateSharpeRatio(
+  monthlyReturns: number[],
+  riskFreeRate = 0.035
+): number | null {
+  if (monthlyReturns.length < 3) return null;
+  const avg = monthlyReturns.reduce((s, r) => s + r, 0) / monthlyReturns.length;
+  const variance =
+    monthlyReturns.reduce((s, r) => s + Math.pow(r - avg, 2), 0) / monthlyReturns.length;
+  const stdDev = Math.sqrt(variance);
+  if (stdDev === 0) return null;
+  return (avg - riskFreeRate / 12) / (stdDev * Math.sqrt(12));
+}
+
+export function calculateRebalanceSuggestions(
+  current: AllocationSlice[],
+  targets: Record<string, number>,
+  totalValueKRW: number
+): RebalanceSuggestion[] {
+  const suggestions: RebalanceSuggestion[] = [];
+  for (const [assetType, targetRatio] of Object.entries(targets)) {
+    const currentRatio = current
+      .filter(
+        (a) =>
+          a.assetType === assetType ||
+          // group us-stock + kr-stock under 'stock'
+          (assetType === 'stock' && (a.assetType === 'us-stock' || a.assetType === 'kr-stock'))
+      )
+      .reduce((s, a) => s + a.percentage, 0);
+    const diffRatio = targetRatio - currentRatio;
+    if (Math.abs(diffRatio) <= 10) continue;
+    const action = assetType === 'cash' ? 'CASH_ADJUST' : diffRatio > 0 ? 'BUY' : 'SELL';
+    const amountKRW = Math.abs(diffRatio / 100) * totalValueKRW;
+    suggestions.push({
+      assetType,
+      currentRatio,
+      targetRatio,
+      diffRatio,
+      action,
+      amountKRW,
+      message: `${assetType} 비중 ${currentRatio.toFixed(1)}% → 목표 ${targetRatio}% (${diffRatio > 0 ? '+' : ''}${diffRatio.toFixed(1)}%p)`,
+    });
+  }
+  return suggestions;
+}
 
 export function calculatePortfolioSummary(
   holdings: HoldingWithQuote[],
@@ -121,6 +236,13 @@ export function calculatePortfolioSummary(
     totalReturnPercent = investedSum > 0 ? (pnlSum / investedSum) * 100 : null;
   }
 
+  const riskMetrics: RiskMetrics = {
+    riskProfile: calculateRiskProfile(allocations),
+    concentrationWarnings: calculateConcentrationWarnings(allocations),
+    sharpeRatio: null,
+    sharpeRatioStatus: 'insufficient_data',
+  };
+
   return {
     totalValue,
     totalChange,
@@ -130,5 +252,6 @@ export function calculatePortfolioSummary(
     currency: 'KRW',
     totalUnrealizedPnL,
     totalReturnPercent,
+    riskMetrics,
   };
 }

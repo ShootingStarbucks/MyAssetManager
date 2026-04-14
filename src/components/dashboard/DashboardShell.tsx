@@ -6,10 +6,23 @@ import { AddHoldingForm } from './AddHoldingForm';
 import { PortfolioSummaryCard } from './PortfolioSummaryCard';
 import { PortfolioTable } from './PortfolioTable';
 import { AllocationChart } from './AllocationChart';
+import { ConcentrationWarningBanner } from './ConcentrationWarningBanner';
+import { RiskProfileBadge } from './RiskProfileBadge';
+import { RebalanceSuggestionCard } from './RebalanceSuggestionCard';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 
 export function DashboardShell() {
   const { data: session } = useSession();
+  const { summary } = usePortfolioSummary();
+
+  async function handleSaveTargets(targets: { stock: number; crypto: number; cash: number }) {
+    await fetch('/api/rebalance/targets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(targets),
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -35,6 +48,23 @@ export function DashboardShell() {
           {/* 왼쪽 패널: 요약 + 자산 추가 */}
           <div className="lg:col-span-1 space-y-4">
             <PortfolioSummaryCard />
+
+            <ConcentrationWarningBanner
+              warnings={summary?.riskMetrics?.concentrationWarnings ?? []}
+            />
+
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold text-gray-700">리스크 프로필</span>
+                  <RiskProfileBadge riskProfile={summary?.riskMetrics?.riskProfile ?? 'CONSERVATIVE'} />
+                </div>
+                <RebalanceSuggestionCard
+                  suggestions={[]}
+                  onSaveTargets={handleSaveTargets}
+                />
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>

@@ -39,6 +39,34 @@ export interface CashAccount {
   updatedAt: string;
 }
 
+export type ConcentrationWarning = {
+  type: 'WARNING' | 'DANGER' | 'ASSET_CLASS';
+  ticker?: string;
+  assetType?: string;
+  ratio: number;
+  message: string;
+};
+
+export type RiskProfile = 'AGGRESSIVE' | 'MODERATE' | 'CONSERVATIVE';
+
+export type RiskMetrics = {
+  riskProfile: RiskProfile;
+  concentrationWarnings: ConcentrationWarning[];
+  sharpeRatio: number | null;
+  sharpeRatioStatus: 'ok' | 'insufficient_data';
+};
+
+export type RebalanceSuggestion = {
+  ticker?: string;
+  assetType: string;
+  currentRatio: number;
+  targetRatio: number;
+  diffRatio: number;
+  action: 'BUY' | 'SELL' | 'CASH_ADJUST';
+  amountKRW: number;
+  message: string;
+};
+
 export interface PortfolioSummary {
   totalValue: number;
   totalChange: number;
@@ -49,4 +77,5 @@ export interface PortfolioSummary {
   totalUnrealizedPnL: number | null;
   totalReturnPercent: number | null;
   cashAccounts?: CashAccount[];  // NEW — optional for backward compat
+  riskMetrics: RiskMetrics;
 }
