@@ -17,6 +17,7 @@ function makeHolding(
     ticker: 'AAPL',
     assetType: 'us-stock',
     quantity: 1,
+    currency: 'USD' as const,
     createdAt: new Date().toISOString(),
     totalValue: 0,
     quote: {

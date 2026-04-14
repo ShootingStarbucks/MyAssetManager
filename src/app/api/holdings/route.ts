@@ -14,6 +14,11 @@ const addHoldingSchema = z.object({
   assetType: z.enum(['us-stock', 'kr-stock', 'crypto']),
   quantity: z.number().positive('수량은 0보다 커야 합니다'),
   avgCost: z.number().positive().optional(),
+  name: z.string().max(100).optional(),
+  exchange: z.enum(['KOSPI', 'KOSDAQ', 'NASDAQ', 'NYSE', 'ETC']).optional(),
+  currency: z.enum(['KRW', 'USD']).default('KRW'),
+  purchaseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  memo: z.string().max(500).optional(),
 });
 
 export async function GET() {
@@ -51,7 +56,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { ticker, assetType, quantity, avgCost } = parsed.data;
+  const { ticker, assetType, quantity, avgCost, name, exchange, currency, purchaseDate, memo } = parsed.data;
 
   // 최대 보유 자산 수 제한
   const count = await prisma.holding.count({ where: { userId: session.user.id } });
@@ -84,7 +89,7 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const holding = await prisma.$transaction(async (tx: any) => {
       const created = await tx.holding.create({
-        data: { userId, ticker, assetType, quantity, avgCost },
+        data: { userId, ticker, assetType, quantity, avgCost, name, exchange, currency, purchaseDate: purchaseDate ? new Date(purchaseDate) : undefined, memo },
       });
       await tx.transaction.create({
         data: {
@@ -95,6 +100,7 @@ export async function POST(req: NextRequest) {
           type: 'BUY',
           quantity,
           price: avgCost ?? 0,
+          currency,
           note: '초기 보유량',
         },
       });

@@ -8,14 +8,15 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  name         String?
-  password     String?
-  cashBalance  Float         @default(0)
-  holdings     Holding[]
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String?
+  password      String?
+  cashBalance   Float         @default(0)
+  holdings      Holding[]
+  transactions  Transaction[]
+  cashAccounts  CashAccount[]
+  createdAt     DateTime      @default(now())
 }
 
 model Holding {
@@ -29,6 +30,11 @@ model Holding {
   updatedAt    DateTime      @updatedAt
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  name         String?
+  exchange     String?
+  currency     String        @default("KRW")
+  purchaseDate DateTime?
+  memo         String?
 
   @@unique([userId, ticker])
 }
@@ -46,6 +52,21 @@ model Transaction {
   date      DateTime @default(now())
   note      String?
   createdAt DateTime @default(now())
+  currency  String   @default("KRW")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   holding   Holding  @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+}
+
+model CashAccount {
+  id           String    @id @default(cuid())
+  userId       String
+  institution  String
+  accountType  String
+  amount       Float
+  interestRate Float?
+  maturityDate DateTime?
+  memo         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
