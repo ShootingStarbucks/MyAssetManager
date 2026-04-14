@@ -33,6 +33,7 @@ export function useAddHolding() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      fetch('/api/insights/stale', { method: 'PATCH' });
     },
   });
 }
@@ -51,6 +52,7 @@ export function useRemoveHolding() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      fetch('/api/insights/stale', { method: 'PATCH' });
     },
   });
 }
@@ -71,6 +73,7 @@ export function useUpdateHolding() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
+      fetch('/api/insights/stale', { method: 'PATCH' });
     },
   });
 }

@@ -19,6 +19,7 @@ model User {
   transactions       Transaction[]
   cashAccounts       CashAccount[]
   snapshots          PortfolioSnapshot[]
+  insights           Insight[]
   createdAt          DateTime            @default(now())
 }
 
@@ -69,6 +70,16 @@ model Transaction {
   currency  String   @default("KRW")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   holding   Holding  @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+}
+
+model Insight {
+  id        String   @id @default(cuid())
+  userId    String
+  summary   String
+  details   String
+  isStale   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CashAccount {
