@@ -22,7 +22,10 @@ export function useAddCashAccount() {
       if (!res.ok) throw new Error('Failed to add cash account');
       return res.json();
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: CASH_QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CASH_QUERY_KEY });
+      fetch('/api/insights/stale', { method: 'PATCH' });
+    },
   });
 }
 
