@@ -1,7 +1,9 @@
 'use client';
 
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import { useCashAccounts } from '@/hooks/use-cash';
 import { HoldingRow } from './HoldingRow';
+import { CashAccountRow } from './CashAccountRow';
 import { Spinner } from '@/components/ui/Spinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
@@ -19,6 +21,7 @@ function SkeletonRow() {
 
 export function PortfolioTable() {
   const { holdings, isLoading, isError } = usePortfolioSummary();
+  const cashAccounts = useCashAccounts();
 
   if (isLoading && holdings.length === 0) {
     return (
@@ -32,7 +35,9 @@ export function PortfolioTable() {
     return <ErrorMessage message="가격 정보를 불러오는 중 오류가 발생했습니다" />;
   }
 
-  if (holdings.length === 0) {
+  const hasCashAccounts = (cashAccounts.data?.length ?? 0) > 0;
+
+  if (holdings.length === 0 && !hasCashAccounts) {
     return (
       <div className="text-center py-12 text-gray-500">
         <p className="text-lg font-medium mb-1">보유 자산이 없습니다</p>
@@ -66,6 +71,18 @@ export function PortfolioTable() {
                   isQuoteLoading={isLoading}
                 />
               ))}
+          {hasCashAccounts && (
+            <>
+              <tr className="bg-emerald-50">
+                <td colSpan={8} className="py-2 px-4 text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                  현금/예금
+                </td>
+              </tr>
+              {cashAccounts.data!.map((account) => (
+                <CashAccountRow key={account.id} account={account} />
+              ))}
+            </>
+          )}
         </tbody>
       </table>
     </div>
