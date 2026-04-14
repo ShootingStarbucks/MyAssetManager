@@ -13,6 +13,7 @@ import { RebalanceSuggestionCard } from './RebalanceSuggestionCard';
 import { RebalanceComparisonChart } from './RebalanceComparisonChart';
 import { HoldingReturnBarChart } from './HoldingReturnBarChart';
 import { PortfolioLineChart } from './PortfolioLineChart';
+import { InsightCard } from './InsightCard';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 
@@ -75,6 +76,8 @@ export function DashboardShell() {
           {/* 왼쪽 패널: 요약 + 리스크 + 리밸런싱 + 자산 추가 */}
           <div className="lg:col-span-1 space-y-4">
             <PortfolioSummaryCard />
+
+            <InsightCard />
 
             <ConcentrationWarningBanner
               warnings={summary?.riskMetrics?.concentrationWarnings ?? []}
