@@ -275,3 +275,17 @@ export function calculatePortfolioSummary(
     riskMetrics,
   };
 }
+
+export function snapshotsToMonthlyReturns(
+  snapshots: Array<{ totalValue: number }>
+): number[] {
+  const returns: number[] = [];
+  for (let i = 1; i < snapshots.length; i++) {
+    const prev = snapshots[i - 1].totalValue;
+    const curr = snapshots[i].totalValue;
+    if (prev > 0) {
+      returns.push((curr - prev) / prev);
+    }
+  }
+  return returns;
+}
