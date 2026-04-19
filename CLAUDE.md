@@ -58,14 +58,28 @@ When ANY task is received:
 ```bash
 git checkout develop && git pull origin develop
 git checkout -b feature/<name>
-# do work
-git add <files>
-git commit -m "<type>(<scope>): <description>"
+
+# Commit each logical unit as it is completed — do NOT batch all changes into one commit
+git add <files-for-unit-1>
+git commit -m "<type>(<scope>): <description of unit 1>"
+
+git add <files-for-unit-2>
+git commit -m "<type>(<scope>): <description of unit 2>"
+
+# ... repeat per logical unit ...
+
 git checkout develop
 git merge --no-ff feature/<name> -m "feat: merge feature/<name>"
 git branch -d feature/<name>
 git push origin develop
 ```
+
+**What counts as one commit unit:**
+- Adding a single API route or handler
+- Adding or modifying a single component
+- Schema change + migration (together as one unit)
+- Writing tests for one feature
+- A standalone refactor or rename
 
 **Commit message format** — Conventional Commits:
 ```
@@ -82,8 +96,10 @@ Types: `feat` | `fix` | `test` | `chore` | `refactor` | `docs` | `style`
 **Claude auto-behavior on every dev request:**
 1. Run `git status` to check current branch
 2. Create `feature/<task>` branch from `develop`
-3. Commit in logical units after work is done
-4. Stop — do NOT merge or push. Wait for user to confirm before merging.
+3. **Commit after each logical unit is complete** — never accumulate all changes into a single commit
+   - Each commit must represent one self-contained change (one route, one component, one schema change, etc.)
+   - Stage only the files belonging to that unit; do not bulk-add unrelated files
+4. Stop after all commits are made — do NOT merge or push. Wait for user to confirm before merging.
 
 ## Commands
 

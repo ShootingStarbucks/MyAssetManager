@@ -60,14 +60,28 @@
 ```bash
 git checkout develop && git pull origin develop
 git checkout -b feature/<name>
-# 작업 수행
-git add <files>
-git commit -m "<type>(<scope>): <설명>"
+
+# 논리적 단위가 완성될 때마다 커밋 — 모든 변경을 하나의 커밋에 몰아넣지 않습니다
+git add <unit-1-관련-파일>
+git commit -m "<type>(<scope>): <unit 1 설명>"
+
+git add <unit-2-관련-파일>
+git commit -m "<type>(<scope>): <unit 2 설명>"
+
+# ... 논리적 단위마다 반복 ...
+
 git checkout develop
 git merge --no-ff feature/<name> -m "feat: merge feature/<name>"
 git branch -d feature/<name>
 git push origin develop
 ```
+
+**커밋 단위 기준:**
+- API 라우트 또는 핸들러 하나 추가
+- 컴포넌트 하나 추가 또는 수정
+- 스키마 변경 + 마이그레이션 (함께 하나의 단위)
+- 하나의 기능에 대한 테스트 작성
+- 독립적인 리팩터 또는 이름 변경
 
 **커밋 메시지 형식** — Conventional Commits:
 ```
@@ -84,8 +98,10 @@ refactor(portfolio): 수익률 계산 로직 분리
 **Claude 자동 수행 규칙 (모든 개발 요청 시):**
 1. `git status`로 현재 브랜치 확인
 2. `develop`에서 `feature/<작업명>` 브랜치 생성
-3. 작업 완료 후 논리적 단위로 커밋
-4. 여기서 중단 — 머지·푸시 금지. 머지 전 반드시 사용자 확인 대기.
+3. **논리적 단위가 완성될 때마다 즉시 커밋** — 모든 변경을 하나의 커밋에 몰아넣지 않습니다
+   - 커밋 하나는 자기완결적인 변경 하나를 나타내야 합니다 (라우트 하나, 컴포넌트 하나, 스키마 변경 하나 등)
+   - 단위에 속하는 파일만 스테이징하고, 관련 없는 파일을 일괄 추가하지 않습니다
+4. 모든 커밋 완료 후 중단 — 머지·푸시 금지. 머지 전 반드시 사용자 확인 대기.
 
 ## 명령어
 
