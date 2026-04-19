@@ -20,7 +20,9 @@ export function usePortfolioSummary() {
     return holdings.map((h) => {
       const result = quoteMap.get(h.ticker);
       const quote = result?.quote ?? null;
-      const totalValue = quote ? toKRW(quote.price, quote.currency) * h.quantity : 0;
+      const totalValue = quote
+        ? toKRW(quote.price, quote.currency) * h.quantity
+        : h.avgCost != null ? toKRW(h.avgCost, h.currency) * h.quantity : 0;
       return { ...h, quote, totalValue };
     });
   }, [holdings, quoteResults]);
