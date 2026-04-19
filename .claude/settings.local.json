@@ -13,7 +13,8 @@
       "Bash(echo \"exit: $?\")",
       "Bash(echo \"push 허용 확인 \\(출력 없으면 통과\\): exit $?\")",
       "Bash(curl:*)",
-      "Bash(grep -r \"trustHost\" D:/dev/MyAssetManager/node_modules/next-auth/types* D:/dev/MyAssetManager/node_modules/@auth/core/types*)"
+      "Bash(grep -r \"trustHost\" D:/dev/MyAssetManager/node_modules/next-auth/types* D:/dev/MyAssetManager/node_modules/@auth/core/types*)",
+      "WebFetch(domain:ai.google.dev)"
     ],
     "deny": [
       "Bash(rm -rf:*)",
