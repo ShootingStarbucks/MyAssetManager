@@ -43,8 +43,13 @@ export function calculateUnrealizedPnL(holding: HoldingWithQuote): {
   unrealizedPnLPercent: number | null;
   avgCostKRW: number | null;
 } {
-  if (holding.avgCost == null || holding.quote == null) {
+  if (holding.avgCost == null) {
     return { unrealizedPnL: null, unrealizedPnLPercent: null, avgCostKRW: null };
+  }
+  if (holding.quote == null) {
+    // No live quote: treat avgCost as current price → PnL = 0
+    const avgCostKRW = toKRW(holding.avgCost, holding.currency);
+    return { unrealizedPnL: 0, unrealizedPnLPercent: 0, avgCostKRW };
   }
   const avgCostKRW = toKRW(holding.avgCost, holding.quote.currency);
   const currentPriceKRW = toKRW(holding.quote.price, holding.quote.currency);
@@ -173,10 +178,13 @@ export function calculatePortfolioSummary(
   exchangeRate: number = USD_TO_KRW
 ): PortfolioSummary {
   const validHoldings = holdings.filter((h) => h.quote !== null);
+  const fallbackHoldings = holdings.filter((h) => h.quote === null && h.avgCost != null);
 
   const holdingsValue = validHoldings.reduce((sum, h) => {
     const priceKRW = toKRW(h.quote!.price, h.quote!.currency, exchangeRate);
     return sum + priceKRW * h.quantity;
+  }, 0) + fallbackHoldings.reduce((sum, h) => {
+    return sum + toKRW(h.avgCost!, h.currency, exchangeRate) * h.quantity;
   }, 0);
 
   // 현금 계좌 합산 + 레거시 현금 잔액
@@ -190,7 +198,10 @@ export function calculatePortfolioSummary(
     const prevPrice = h.quote!.price - h.quote!.change;
     const prevPriceKRW = toKRW(prevPrice, h.quote!.currency, exchangeRate);
     return sum + prevPriceKRW * h.quantity;
-  }, cashForTotal); // 현금은 전일 대비 변동 없음 (음수 현금은 0으로 처리)
+  }, cashForTotal) + fallbackHoldings.reduce((sum, h) => {
+    // No change data for fallback holdings — yesterday value equals today (avgCost)
+    return sum + toKRW(h.avgCost!, h.currency, exchangeRate) * h.quantity;
+  }, 0);
 
   const totalChange = totalValue - totalYesterdayValue;
   const totalChangePercent =
@@ -227,6 +238,29 @@ export function calculatePortfolioSummary(
     };
   });
 
+  // Add fallback holdings (no live quote, using avgCost) to allocations
+  for (const h of fallbackHoldings) {
+    const value = toKRW(h.avgCost!, h.currency, exchangeRate) * h.quantity;
+    let color: string;
+    if (h.assetType === 'us-stock' || h.assetType === 'kr-stock') {
+      color = STOCK_SHADES[shadeCounters.stock % 5];
+      shadeCounters.stock += 1;
+    } else if (h.assetType === 'crypto') {
+      color = CRYPTO_SHADES[shadeCounters.crypto % 5];
+      shadeCounters.crypto += 1;
+    } else {
+      color = CASH_SHADES[shadeCounters.cash % 5];
+      shadeCounters.cash += 1;
+    }
+    allocations.push({
+      ticker: h.ticker,
+      assetType: h.assetType,
+      value,
+      percentage: totalValue > 0 ? (value / totalValue) * 100 : 0,
+      color,
+    });
+  }
+
   // 현금 슬라이스 추가
   if (cashForTotal > 0) {
     allocations.push({
@@ -238,7 +272,7 @@ export function calculatePortfolioSummary(
     });
   }
 
-  const holdingsWithAvgCost = validHoldings.filter(h => h.avgCost != null);
+  const holdingsWithAvgCost = [...validHoldings, ...fallbackHoldings].filter(h => h.avgCost != null);
   let totalUnrealizedPnL: number | null = null;
   let totalReturnPercent: number | null = null;
 

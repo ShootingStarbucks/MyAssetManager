@@ -32,7 +32,9 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
   const { mutate: update, isPending: isUpdating } = useUpdateHolding();
 
   const quote = holding.quote;
-  const priceKRW = quote ? toKRW(quote.price, quote.currency) : null;
+  const priceKRW = quote
+    ? toKRW(quote.price, quote.currency)
+    : holding.avgCost != null ? toKRW(holding.avgCost, holding.currency) : null;
   const totalValue = priceKRW !== null ? priceKRW * holding.quantity : null;
   const { unrealizedPnL, unrealizedPnLPercent } = calculateUnrealizedPnL(holding);
 
@@ -83,7 +85,7 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex flex-col">
             <span className="font-semibold text-gray-900">{holding.ticker}</span>
             {holding.assetType === 'kr-stock' && quote?.name && (
@@ -91,6 +93,7 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
             )}
           </div>
           <AssetTypeBadge type={holding.assetType} />
+          {!quote && <ManualPriceBadge />}
         </div>
       </td>
       <td className="px-4 py-3 text-right">
