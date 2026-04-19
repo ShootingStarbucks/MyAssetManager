@@ -50,9 +50,9 @@ export function InsightCard() {
         setError('5분 후 다시 시도해주세요.');
         return;
       }
-      if (res.status === 400) {
-        const body = await res.json();
-        setError(body.error ?? '잘못된 요청입니다.');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? '인사이트 생성에 실패했습니다.');
         return;
       }
       const data = await res.json();
