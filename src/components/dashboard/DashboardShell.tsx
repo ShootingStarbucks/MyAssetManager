@@ -9,6 +9,7 @@ import { PortfolioTable } from './PortfolioTable';
 import { AllocationChart } from './AllocationChart';
 import { ConcentrationWarningBanner } from './ConcentrationWarningBanner';
 import { RiskGaugeChart } from './RiskGaugeChart';
+import { SharpeRatioCard } from './SharpeRatioCard';
 import { RebalanceSuggestionCard } from './RebalanceSuggestionCard';
 import { RebalanceComparisonChart } from './RebalanceComparisonChart';
 import { HoldingReturnBarChart } from './HoldingReturnBarChart';
@@ -89,6 +90,8 @@ export function DashboardShell() {
                 <RiskGaugeChart riskProfile={riskProfile} />
               </CardContent>
             </Card>
+
+            <SharpeRatioCard />
 
             <Card>
               <CardContent className="pt-4">
