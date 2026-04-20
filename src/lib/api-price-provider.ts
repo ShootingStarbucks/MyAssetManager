@@ -4,6 +4,7 @@ import { fetchUsStockQuote } from './finnhub-client';
 import { fetchKrStockQuote } from './yahoo-finance-client';
 import { fetchCryptoQuotes } from './coingecko-client';
 import { prisma } from './prisma';
+import { fetchUsdToKrw } from './exchange-rate-client';
 
 const FALLBACK_EXCHANGE_RATE = 1380;
 
@@ -47,10 +48,23 @@ export class ApiPriceProvider implements PriceProvider {
           where: { id: this.userId },
           select: { exchangeRateUSDKRW: true },
         });
-        return user?.exchangeRateUSDKRW ?? FALLBACK_EXCHANGE_RATE;
+        if (user?.exchangeRateUSDKRW != null) {
+          return user.exchangeRateUSDKRW;
+        }
       } catch {
-        return FALLBACK_EXCHANGE_RATE;
+        // fall through to live fetch
       }
+
+      try {
+        const live = await fetchUsdToKrw();
+        if (live != null) {
+          return live;
+        }
+      } catch {
+        // fall through to fallback
+      }
+
+      return FALLBACK_EXCHANGE_RATE;
     }
     return null;
   }
