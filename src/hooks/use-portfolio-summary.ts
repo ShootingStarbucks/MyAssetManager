@@ -38,6 +38,7 @@ export function usePortfolioSummary() {
     holdings: holdingsWithQuotes,
     summary,
     cashBalance,
+    exchangeRate,
     isLoading: holdingsLoading || (quotesLoading && quoteResults.length === 0),
     isError,
     lastUpdatedAt: dataUpdatedAt ? new Date(dataUpdatedAt) : null,
