@@ -20,7 +20,7 @@ function SkeletonRow() {
 }
 
 export function PortfolioTable() {
-  const { holdings, isLoading, isError } = usePortfolioSummary();
+  const { holdings, exchangeRate, isLoading, isError } = usePortfolioSummary();
   const cashAccounts = useCashAccounts();
 
   if (isLoading && holdings.length === 0) {
@@ -69,6 +69,7 @@ export function PortfolioTable() {
                   key={h.id}
                   holding={h}
                   isQuoteLoading={isLoading}
+                  exchangeRate={exchangeRate}
                 />
               ))}
           {hasCashAccounts && (

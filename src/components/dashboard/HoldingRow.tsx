@@ -13,9 +13,10 @@ import type { HoldingWithQuote } from '@/types/portfolio.types';
 interface HoldingRowProps {
   holding: HoldingWithQuote;
   isQuoteLoading: boolean;
+  exchangeRate?: number;
 }
 
-export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
+export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: HoldingRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editQty, setEditQty] = useState(String(holding.quantity));
   const [isEditingAvgCost, setIsEditingAvgCost] = useState(false);
@@ -33,8 +34,8 @@ export function HoldingRow({ holding, isQuoteLoading }: HoldingRowProps) {
 
   const quote = holding.quote;
   const priceKRW = quote
-    ? toKRW(quote.price, quote.currency)
-    : holding.avgCost != null ? toKRW(holding.avgCost, holding.currency) : null;
+    ? toKRW(quote.price, quote.currency, exchangeRate)
+    : holding.avgCost != null ? toKRW(holding.avgCost, holding.currency, exchangeRate) : null;
   const totalValue = priceKRW !== null ? priceKRW * holding.quantity : null;
   const { unrealizedPnL, unrealizedPnLPercent } = calculateUnrealizedPnL(holding);
 
