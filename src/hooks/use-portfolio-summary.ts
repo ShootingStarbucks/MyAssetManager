@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHoldings } from './use-holdings';
 import { useAssetQuotes } from './use-asset-quotes';
 import { useCashBalance, useCashAccounts } from './use-cash';
+import { useExchangeRate } from './use-exchange-rate';
 import { calculatePortfolioSummary, toKRW } from '@/lib/calculate-portfolio';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 import type { QuoteResult } from '@/types/asset.types';
@@ -11,6 +12,7 @@ export function usePortfolioSummary() {
   const { data: quoteResults = [], isLoading: quotesLoading, isError, dataUpdatedAt } = useAssetQuotes(holdings);
   const { data: cashBalance = 0 } = useCashBalance();
   const { data: cashAccounts = [] } = useCashAccounts();
+  const { exchangeRate } = useExchangeRate();
 
   const holdingsWithQuotes: HoldingWithQuote[] = useMemo(() => {
     const quoteMap = new Map<string, QuoteResult>(
@@ -21,15 +23,15 @@ export function usePortfolioSummary() {
       const result = quoteMap.get(h.ticker);
       const quote = result?.quote ?? null;
       const totalValue = quote
-        ? toKRW(quote.price, quote.currency) * h.quantity
-        : h.avgCost != null ? toKRW(h.avgCost, h.currency) * h.quantity : 0;
+        ? toKRW(quote.price, quote.currency, exchangeRate) * h.quantity
+        : h.avgCost != null ? toKRW(h.avgCost, h.currency, exchangeRate) * h.quantity : 0;
       return { ...h, quote, totalValue };
     });
-  }, [holdings, quoteResults]);
+  }, [holdings, quoteResults, exchangeRate]);
 
   const summary = useMemo(
-    () => calculatePortfolioSummary(holdingsWithQuotes, cashAccounts, cashBalance),
-    [holdingsWithQuotes, cashAccounts, cashBalance]
+    () => calculatePortfolioSummary(holdingsWithQuotes, cashAccounts, cashBalance, exchangeRate),
+    [holdingsWithQuotes, cashAccounts, cashBalance, exchangeRate]
   );
 
   return {
