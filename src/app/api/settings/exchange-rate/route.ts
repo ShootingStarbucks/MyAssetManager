@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { fetchUsdToKrw } from '@/lib/exchange-rate-client';
 import type { ApiError } from '@/types/api.types';
 
 const updateExchangeRateSchema = z.object({
@@ -23,10 +24,14 @@ export async function GET() {
     select: { exchangeRateUSDKRW: true },
   });
 
-  return NextResponse.json({
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    exchangeRate: (user?.exchangeRateUSDKRW as number | null) ?? null,
-  });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const dbRate = (user?.exchangeRateUSDKRW as number | null) ?? null;
+  if (dbRate !== null) {
+    return NextResponse.json({ exchangeRate: dbRate });
+  }
+
+  const liveRate = await fetchUsdToKrw();
+  return NextResponse.json({ exchangeRate: liveRate ?? 1380 });
 }
 
 export async function POST(req: NextRequest) {
