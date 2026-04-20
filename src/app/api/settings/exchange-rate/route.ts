@@ -26,12 +26,12 @@ export async function GET() {
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   const dbRate = (user?.exchangeRateUSDKRW as number | null) ?? null;
-  if (dbRate !== null) {
-    return NextResponse.json({ exchangeRate: dbRate });
-  }
 
-  const liveRate = await fetchUsdToKrw();
-  return NextResponse.json({ exchangeRate: liveRate ?? 1380 });
+  const liveRate = dbRate === null ? await fetchUsdToKrw() : null;
+  return NextResponse.json({
+    exchangeRate: dbRate,
+    resolvedRate: dbRate ?? liveRate ?? 1380,
+  });
 }
 
 export async function POST(req: NextRequest) {
