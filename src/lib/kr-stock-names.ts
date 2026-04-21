@@ -148,6 +148,10 @@ export const KR_STOCK_LIST: KrStockEntry[] = [
   { ticker: '455250', name: '에코프로머티리얼즈', market: 'KOSDAQ' },
 ];
 
+export function getKrStockKoreanName(ticker: string): string | undefined {
+  return KR_STOCK_LIST.find((s) => s.ticker === ticker)?.name;
+}
+
 /**
  * 한국어 종목명 또는 티커 코드로 검색
  */
