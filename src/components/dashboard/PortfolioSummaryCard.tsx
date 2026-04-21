@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 import { useCashAccounts } from '@/hooks/use-cash';
+import { useExchangeRate } from '@/hooks/use-exchange-rate';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ChangeBadge } from '@/components/ui/Badge';
 import { formatKRW } from '@/lib/format-currency';
@@ -11,6 +12,7 @@ import { Spinner } from '@/components/ui/Spinner';
 export function PortfolioSummaryCard() {
   const { summary, isLoading, lastUpdatedAt } = usePortfolioSummary();
   const { data: cashAccounts = [] } = useCashAccounts();
+  const { exchangeRate } = useExchangeRate();
   const queryClient = useQueryClient();
 
   const cashTotal = cashAccounts.reduce((s, a) => s + a.amount, 0);
@@ -90,6 +92,10 @@ export function PortfolioSummaryCard() {
                   · 업데이트 {lastUpdatedAt.toLocaleTimeString('ko-KR')}
                 </span>
               )}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              $1 = ₩{exchangeRate.toLocaleString('ko-KR')}{' '}
+              <span className="text-green-500">실시간</span>
             </div>
           </>
         )}
