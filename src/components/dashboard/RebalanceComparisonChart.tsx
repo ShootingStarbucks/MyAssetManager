@@ -43,7 +43,7 @@ export function RebalanceComparisonChart({
         <XAxis
           type="number"
           domain={[0, 100]}
-          tickFormatter={(value: number) => `${value}%`}
+          tickFormatter={(value: number) => `${Math.round(value)}%`}
           tick={{ fontSize: 12 }}
         />
         <YAxis
@@ -54,7 +54,7 @@ export function RebalanceComparisonChart({
         />
         <Tooltip
           formatter={(value, name) => [
-            `${typeof value === 'number' ? value : Number(value)}%`,
+            `${Math.round(typeof value === 'number' ? value : Number(value))}%`,
             name === 'current' ? '현재' : '목표',
           ]}
         />
