@@ -1,4 +1,6 @@
+import 'server-only';
 import type { NormalizedQuote } from '@/types/asset.types';
+import type { SearchResult } from '@/types/api.types';
 
 // BTC → bitcoin 등 CoinGecko ID 매핑 (주요 코인)
 const TICKER_TO_COINGECKO_ID: Record<string, string> = {
@@ -75,4 +77,19 @@ export async function fetchCryptoQuotes(tickers: string[]): Promise<NormalizedQu
       currency: 'KRW' as const,
     };
   });
+}
+
+export async function searchCrypto(query: string): Promise<SearchResult[]> {
+  const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const coins: Array<{ id: string; name: string; symbol: string; market_cap_rank: number | null }> =
+    data.coins ?? [];
+
+  return coins
+    .sort((a, b) => (a.market_cap_rank ?? 99999) - (b.market_cap_rank ?? 99999))
+    .slice(0, 8)
+    .map((c) => ({ ticker: c.symbol.toUpperCase(), name: c.name }));
 }

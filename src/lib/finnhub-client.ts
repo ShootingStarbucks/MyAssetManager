@@ -1,4 +1,5 @@
-import type { FinnhubQuoteResponse } from '@/types/api.types';
+import 'server-only';
+import type { FinnhubQuoteResponse, SearchResult } from '@/types/api.types';
 import type { NormalizedQuote } from '@/types/asset.types';
 
 const API_KEY = process.env.FINNHUB_API_KEY;
@@ -45,4 +46,20 @@ export async function fetchUsStockQuote(ticker: string): Promise<NormalizedQuote
     changePercent: data.dp,
     currency: 'USD',
   };
+}
+
+export async function searchUsStocks(query: string): Promise<SearchResult[]> {
+  if (!API_KEY) return [];
+
+  const url = `https://finnhub.io/api/v1/search?q=${encodeURIComponent(query)}&token=${API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const items: Array<{ symbol: string; description: string; type: string }> = data.result ?? [];
+
+  return items
+    .filter((item) => item.type === 'Common Stock')
+    .slice(0, 8)
+    .map((item) => ({ ticker: item.symbol, name: item.description }));
 }

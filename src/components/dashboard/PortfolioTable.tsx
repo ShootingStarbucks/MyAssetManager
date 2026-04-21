@@ -1,14 +1,16 @@
 'use client';
 
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import { useCashAccounts } from '@/hooks/use-cash';
 import { HoldingRow } from './HoldingRow';
+import { CashAccountRow } from './CashAccountRow';
 import { Spinner } from '@/components/ui/Spinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
 function SkeletonRow() {
   return (
     <tr className="border-b border-gray-100">
-      {[1,2,3,4,5,6].map((i) => (
+      {[1,2,3,4,5,6,7,8].map((i) => (
         <td key={i} className="px-4 py-3">
           <div className="h-4 bg-gray-200 rounded animate-pulse" />
         </td>
@@ -18,7 +20,8 @@ function SkeletonRow() {
 }
 
 export function PortfolioTable() {
-  const { holdings, isLoading, isError } = usePortfolioSummary();
+  const { holdings, exchangeRate, isLoading, isError } = usePortfolioSummary();
+  const cashAccounts = useCashAccounts();
 
   if (isLoading && holdings.length === 0) {
     return (
@@ -32,7 +35,9 @@ export function PortfolioTable() {
     return <ErrorMessage message="가격 정보를 불러오는 중 오류가 발생했습니다" />;
   }
 
-  if (holdings.length === 0) {
+  const hasCashAccounts = (cashAccounts.data?.length ?? 0) > 0;
+
+  if (holdings.length === 0 && !hasCashAccounts) {
     return (
       <div className="text-center py-12 text-gray-500">
         <p className="text-lg font-medium mb-1">보유 자산이 없습니다</p>
@@ -48,8 +53,10 @@ export function PortfolioTable() {
           <tr className="border-b border-gray-200 bg-gray-50">
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">자산</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">수량</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">평단가</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">현재가</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">등락률</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">수익률</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">평가손익</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">평가액</th>
             <th className="px-4 py-3" />
           </tr>
@@ -58,8 +65,25 @@ export function PortfolioTable() {
           {isLoading
             ? Array(3).fill(null).map((_, i) => <SkeletonRow key={i} />)
             : holdings.map((h) => (
-                <HoldingRow key={h.id} holding={h} isQuoteLoading={isLoading} />
+                <HoldingRow
+                  key={h.id}
+                  holding={h}
+                  isQuoteLoading={isLoading}
+                  exchangeRate={exchangeRate}
+                />
               ))}
+          {hasCashAccounts && (
+            <>
+              <tr className="bg-emerald-50">
+                <td colSpan={8} className="py-2 px-4 text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                  현금/예금
+                </td>
+              </tr>
+              {cashAccounts.data!.map((account) => (
+                <CashAccountRow key={account.id} account={account} />
+              ))}
+            </>
+          )}
         </tbody>
       </table>
     </div>

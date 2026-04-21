@@ -20,7 +20,7 @@ export function useAddHolding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { ticker: string; assetType: AssetType; quantity: number }) => {
+    mutationFn: async (payload: { ticker: string; assetType: AssetType; quantity: number; avgCost?: number; exchange?: string; currency?: 'KRW' | 'USD'; purchaseDate?: string; memo?: string }) => {
       const res = await fetch('/api/holdings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,6 +33,7 @@ export function useAddHolding() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      fetch('/api/insights/stale', { method: 'PATCH' });
     },
   });
 }
@@ -51,6 +52,7 @@ export function useRemoveHolding() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      fetch('/api/insights/stale', { method: 'PATCH' });
     },
   });
 }
@@ -59,11 +61,11 @@ export function useUpdateHolding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
+    mutationFn: async ({ id, quantity, avgCost, currentPrice }: { id: string; quantity?: number; avgCost?: number | null; currentPrice?: number | null }) => {
       const res = await fetch(`/api/holdings/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity }),
+        body: JSON.stringify({ quantity, avgCost, currentPrice }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message ?? '수량 수정에 실패했습니다');
@@ -71,6 +73,7 @@ export function useUpdateHolding() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] });
+      fetch('/api/insights/stale', { method: 'PATCH' });
     },
   });
 }

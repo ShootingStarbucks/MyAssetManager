@@ -2,21 +2,116 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-You are the orchestrator. subagents execute. never build, verify, or code inline. Your job is to plan, prioritize & coordinate.
+# Role: Orchestrator
+
+You are a pure orchestrator. You NEVER write code, run commands, or verify output directly.
+For EVERY user request, you MUST follow this protocol without exception:
+
+## Mandatory Subagent Protocol
+
+When ANY task is received:
+1. Decompose it into discrete subtasks
+2. Spawn a subagent via the Task tool for EACH subtask
+3. Wait for all subagents to complete
+4. Aggregate results and report to user
+
+## Subagent Role Assignments
+
+- **Coder agent**: File creation, modification, code writing
+- **Build agent**: Running builds, installs, scripts
+- **Test agent**: Running tests, checking outputs
+- **Review agent**: Code review, validation, verification
+
+## Hard Rules
+
+- NEVER use Write, Edit, or Bash tools directly — delegate via Task tool only
+- If tempted to write even one line of code inline → STOP and spawn a Coder agent
+- If tempted to run even one command inline → STOP and spawn a Build/Test agent
+- No exceptions. No shortcuts.
+
+## Language Policy
+
+- **CLAUDE.md must be written in English only.** Never write Korean in this file.
+- Whenever CLAUDE.md is created or updated, sync the full Korean translation to `CLAUDE_ko.md` immediately after.
 
 @AGENTS.md
+
+## Git Flow
+
+**Branch strategy** — all work must follow these rules.
+
+| Branch | Purpose | Branch from | Merge into |
+|--------|---------|-------------|------------|
+| `main` | Production deploy | — | — |
+| `develop` | Integration branch | `main` | `main` (on release) |
+| `feature/<name>` | New features | `develop` | `develop` |
+| `fix/<name>` | Bug fixes | `develop` | `develop` |
+| `hotfix/<name>` | Urgent patches | `main` | `main` + `develop` |
+| `release/<version>` | Release preparation | `develop` | `main` + `develop` |
+
+**Mandatory rules:**
+- Never commit directly to `main` or `develop`. Always create a branch and merge via PR.
+- Branch naming: `feature/add-login`, `fix/quote-cache`, `hotfix/auth-crash`
+- Always pull latest `develop` before starting new work.
+
+**Feature development flow (most common case):**
+```bash
+git checkout develop && git pull origin develop
+git checkout -b feature/<name>
+
+# Commit each logical unit as it is completed — do NOT batch all changes into one commit
+git add <files-for-unit-1>
+git commit -m "<type>(<scope>): <description of unit 1>"
+
+git add <files-for-unit-2>
+git commit -m "<type>(<scope>): <description of unit 2>"
+
+# ... repeat per logical unit ...
+
+git checkout develop
+git merge --no-ff feature/<name> -m "feat: merge feature/<name>"
+git branch -d feature/<name>
+git push origin develop
+```
+
+**What counts as one commit unit:**
+- Adding a single API route or handler
+- Adding or modifying a single component
+- Schema change + migration (together as one unit)
+- Writing tests for one feature
+- A standalone refactor or rename
+
+**Commit message format** — Conventional Commits:
+```
+<type>(<scope>): <subject>
+
+feat(auth): add social login
+fix(holdings): fix duplicate ticker validation
+test(quotes): add quotes API tests
+chore(deps): update zod version
+refactor(portfolio): extract return calculation logic
+```
+Types: `feat` | `fix` | `test` | `chore` | `refactor` | `docs` | `style`
+
+**Claude auto-behavior on every dev request:**
+1. Run `git status` to check current branch
+2. Create `feature/<task>` branch from `develop`
+3. **Commit after each logical unit is complete** — never accumulate all changes into a single commit
+   - Each commit must represent one self-contained change (one route, one component, one schema change, etc.)
+   - Stage only the files belonging to that unit; do not bulk-add unrelated files
+4. Stop after all commits are made — do NOT merge or push. Wait for user to confirm before merging.
 
 ## Commands
 
 ```bash
-npm run dev          # 개발 서버 (http://localhost:3000)
-npm run build        # 프로덕션 빌드 (타입 검사 포함)
-npm run lint         # ESLint 실행
-npx tsc --noEmit     # 타입 검사만 (빌드 없이)
+npm run dev          # Dev server (http://localhost:3000)
+npm run build        # Production build (includes type check)
+npm run lint         # Run ESLint
+npx tsc --noEmit     # Type check only (no build)
 
 # DB
-npx prisma migrate dev --name <name>   # 스키마 변경 후 마이그레이션
-npx prisma generate                    # 클라이언트 재생성
+npx prisma migrate dev --name <name>   # Migrate after schema changes
+npx prisma generate                    # Regenerate client
 npx prisma studio                      # DB GUI
 ```
 
@@ -24,59 +119,60 @@ npx prisma studio                      # DB GUI
 
 **Next.js 16 App Router** + **TypeScript strict** + **Tailwind CSS v4**
 
-### 인증 (Auth.js v5)
+### Authentication (Auth.js v5)
 
-두 파일로 분리 — Edge Runtime 제약 때문:
+Split into two files due to Edge Runtime constraints:
 
-- `src/auth.config.ts` — Prisma 없는 경량 설정. 미들웨어(`src/middleware.ts`)에서만 사용. Edge Runtime 호환.
-- `src/auth.ts` — Credentials provider + Prisma 연동 전체 설정. API Route와 서버 컴포넌트에서 사용.
+- `src/auth.config.ts` — Lightweight config without Prisma. Used only in middleware (`src/middleware.ts`). Edge Runtime compatible.
+- `src/auth.ts` — Full config with Credentials provider + Prisma. Used in API Routes and Server Components.
 
-`src/middleware.ts`가 `auth.ts`를 직접 import하면 `node:path`/`node:url` 에러 발생. 반드시 `auth.config.ts`만 사용해야 함.
+If `src/middleware.ts` imports `auth.ts` directly, `node:path`/`node:url` errors occur. Must use only `auth.config.ts`.
 
-### 데이터베이스 (Prisma v7 + SQLite)
+### Database (Prisma v7 + SQLite)
 
-- `prisma/schema.prisma` — `datasource`에 `url` 프로퍼티 없음. URL은 `prisma.config.ts`에서 관리.
-- `src/lib/prisma.ts` — `@prisma/adapter-libsql` 어댑터로 PrismaClient 생성. 생성된 클라이언트(`src/generated/prisma/client.ts`)는 `@ts-nocheck`이라 타입 캐스팅 필요.
-- `src/generated/prisma/` — `npx prisma generate`로 자동 생성. 직접 편집 금지.
-- DB 파일: `prisma/dev.db` (gitignore됨)
+- `prisma/schema.prisma` — No `url` property in `datasource`. URL is managed in `prisma.config.ts`.
+- `src/lib/prisma.ts` — PrismaClient created with `@prisma/adapter-libsql` adapter. Generated client (`src/generated/prisma/client.ts`) has `@ts-nocheck`, so type casting is required.
+- `src/generated/prisma/` — Auto-generated by `npx prisma generate`. Do not edit directly.
+- DB file: `prisma/dev.db` (gitignored)
 
-### 데이터 흐름
+### Data Flow
 
 ```
-컴포넌트
-  → usePortfolioSummary()           # 집계 훅
-      → useHoldings()               # GET /api/holdings (TanStack Query)
-      → useAssetQuotes(holdings)    # POST /api/quotes  (TanStack Query, 60초 폴링)
-          → /api/quotes/route.ts    # API 키 보호 경계 (서버 전용)
-              → finnhub-client.ts   # 미국 주식 (Finnhub API)
-              → yahoo-finance-client.ts  # 한국 주식 (.KS/.KQ 심볼)
-              → coingecko-client.ts # 암호화폐 (API 키 불필요)
+Component
+  -> usePortfolioSummary()           # Aggregation hook
+      -> useHoldings()               # GET /api/holdings (TanStack Query)
+      -> useAssetQuotes(holdings)    # POST /api/quotes  (TanStack Query, 60s polling)
+          -> /api/quotes/route.ts    # API key boundary (server-only)
+              -> finnhub-client.ts       # US stocks (Finnhub API)
+              -> yahoo-finance-client.ts # Korean stocks (.KS/.KQ symbols)
+              -> coingecko-client.ts     # Crypto (no API key required)
 ```
 
-모든 외부 API 호출은 `/api/quotes` Route를 통해서만. 컴포넌트가 API 클라이언트를 직접 import하지 않는다.
+All external API calls go through `/api/quotes` route only. Components never import API clients directly.
 
-### 가격 통화 처리
+### Price & Currency Handling
 
-미국 주식은 USD, 한국 주식/암호화폐는 KRW. `src/lib/calculate-portfolio.ts`의 `toKRW(price, currency)`가 USD→KRW 환산(고정 환율). 총 자산은 항상 KRW 기준.
+US stocks in USD, Korean stocks/crypto in KRW. `toKRW(price, currency)` in `src/lib/calculate-portfolio.ts` converts USD to KRW (fixed exchange rate). Total portfolio value is always in KRW.
 
-### 상태 관리
+### State Management
 
-- **서버 상태** (보유 자산 목록, 실시간 가격): TanStack Query
-- **UI 상태**: Zustand (현재는 최소 사용)
-- localStorage 없음 — 모든 보유 자산은 DB(SQLite)에 저장
+- **Server state** (holdings list, live prices): TanStack Query
+- **UI state**: Zustand (minimal usage currently)
+- No localStorage — all holdings stored in DB (SQLite)
 
-### 주요 제약
+### Key Constraints
 
-- **Zod**: v3 고정 (`zod@^3`). v4는 CJS 빌드 파일 없어서 Turbopack에서 모듈 미발견 에러 발생.
-- **보유 자산 최대 20개**: Finnhub 무료 티어 60 req/min 제한 때문. `/api/holdings/route.ts`에서 강제.
-- **암호화폐 티커→CoinGecko ID 매핑**: `src/lib/coingecko-client.ts`의 `TICKER_TO_COINGECKO_ID` 맵에 없는 코인은 소문자 변환으로 fallback.
+- **Zod**: Pinned to v3 (`zod@^3`). v4 has no CJS build, causing module-not-found errors in Turbopack.
+- **Max 20 holdings**: Enforced in `/api/holdings/route.ts` due to Finnhub free tier limit of 60 req/min.
+- **Crypto ticker -> CoinGecko ID mapping**: Coins not in `TICKER_TO_COINGECKO_ID` map in `src/lib/coingecko-client.ts` fall back to lowercase conversion.
 
-## 환경변수
+## Environment Variables
 
-`.env.local` 필수:
+Required in `.env.local`:
 ```
 DATABASE_URL="file:./prisma/dev.db"
 AUTH_SECRET="..."
-FINNHUB_API_KEY="..."       # https://finnhub.io/register (서버 전용, NEXT_PUBLIC_ 금지)
+FINNHUB_API_KEY="..."       # https://finnhub.io/register (server-only, never NEXT_PUBLIC_)
+KRX_API_KEY="..."           # https://openapi.krx.co.kr (optional, server-only — falls back to Yahoo Finance if absent)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```

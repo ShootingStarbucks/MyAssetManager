@@ -2,14 +2,18 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import { useCashAccounts } from '@/hooks/use-cash';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ChangeBadge } from '@/components/ui/Badge';
-import { formatKRW, formatPercent } from '@/lib/format-currency';
+import { formatKRW } from '@/lib/format-currency';
 import { Spinner } from '@/components/ui/Spinner';
 
 export function PortfolioSummaryCard() {
   const { summary, isLoading, lastUpdatedAt } = usePortfolioSummary();
+  const { data: cashAccounts = [] } = useCashAccounts();
   const queryClient = useQueryClient();
+
+  const cashTotal = cashAccounts.reduce((s, a) => s + a.amount, 0);
 
   function handleRefresh() {
     queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -38,14 +42,47 @@ export function PortfolioSummaryCard() {
           </div>
         ) : (
           <>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
+            <div className="text-3xl font-bold text-gray-900 mb-3">
               {formatKRW(summary.totalValue)}
             </div>
+
+            {/* 평가손익 */}
+            {summary.totalUnrealizedPnL !== null && (
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-gray-500">평가손익</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-medium ${summary.totalUnrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summary.totalUnrealizedPnL >= 0 ? '+' : ''}
+                    {summary.totalUnrealizedPnL.toLocaleString('ko-KR')}원
+                  </span>
+                  {summary.totalReturnPercent !== null && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${summary.totalReturnPercent >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {summary.totalReturnPercent >= 0 ? '+' : ''}
+                      {summary.totalReturnPercent.toFixed(2)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 mb-3">
               <ChangeBadge value={summary.totalChange} suffix="원" />
               <ChangeBadge value={summary.totalChangePercent} />
               <span className="text-xs text-gray-400">전일 대비</span>
             </div>
+            {/* 현금/예금 잔액 */}
+            <div className="flex items-center justify-between py-2 border-t border-gray-100 mt-2">
+              <span className="text-xs text-gray-500">현금/예금</span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-medium text-gray-700">
+                  {formatKRW(cashTotal)}
+                </span>
+                {cashAccounts.length > 0 && (
+                  <span className="text-xs text-gray-400">({cashAccounts.length}개 계좌)</span>
+                )}
+              </div>
+            </div>
+
             <div className="text-xs text-gray-400">
               {summary.holdingsCount}개 자산
               {lastUpdatedAt && (

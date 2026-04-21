@@ -25,3 +25,14 @@ export interface FinnhubQuoteResponse {
   pc: number;  // Previous close
   t: number;   // Timestamp
 }
+
+export interface HistoricalPriceRequestItem {
+  ticker: string;
+  assetType: import('./asset.types').AssetType;
+  date: string; // "YYYY-MM-DD"
+}
+
+export interface SearchResult {
+  ticker: string; // US: "AAPL", KR: "005930", Crypto: "BTC"
+  name: string;   // US: "Apple Inc.", KR: "삼성전자", Crypto: "Bitcoin"
+}

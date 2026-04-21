@@ -26,7 +26,7 @@ export function ChangeBadge({ value, suffix = '%', className = '' }: BadgeProps)
 export function AssetTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; color: string }> = {
     'us-stock': { label: '미국주식', color: 'bg-blue-50 text-blue-700' },
-    'kr-stock': { label: '한국주식', color: 'bg-red-50 text-red-700' },
+    'kr-stock': { label: '한국주식', color: 'bg-emerald-50 text-emerald-700' },
     crypto: { label: '암호화폐', color: 'bg-amber-50 text-amber-700' },
   };
 
@@ -35,6 +35,14 @@ export function AssetTypeBadge({ type }: { type: string }) {
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${color}`}>
       {label}
+    </span>
+  );
+}
+
+export function ManualPriceBadge() {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+      현재가 미입력
     </span>
   );
 }

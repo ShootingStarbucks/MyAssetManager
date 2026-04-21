@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
-export default function LoginPage() {
-  const router = useRouter();
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const registered = searchParams.get('registered');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,8 +29,7 @@ export default function LoginPage() {
     if (result?.error) {
       setError('이메일 또는 비밀번호가 올바르지 않습니다');
     } else {
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     }
   }
 
@@ -38,6 +38,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">로그인</h1>
         <p className="text-gray-500 text-sm mb-6">자산 관리 대시보드에 오신 것을 환영합니다</p>
+
+        {registered === '1' && (
+          <p className="text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg mb-4">
+            회원가입이 완료되었습니다. 로그인해주세요.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -84,5 +90,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
