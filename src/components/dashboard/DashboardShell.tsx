@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { AddHoldingForm } from './AddHoldingForm';
+import { AddHoldingModal } from './AddHoldingModal';
 import { PortfolioSummaryCard } from './PortfolioSummaryCard';
 import { PortfolioTable } from './PortfolioTable';
 import { AllocationChart } from './AllocationChart';
@@ -22,6 +24,7 @@ import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 export function DashboardShell() {
   const { data: session } = useSession();
   const { summary } = usePortfolioSummary();
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const { data: targetData } = useQuery<{ allocations: { stock: number; crypto: number; cash: number } }>({
     queryKey: ['rebalance-targets'],
@@ -128,7 +131,15 @@ export function DashboardShell() {
           <div className="lg:col-span-2 space-y-4">
             <Card>
               <CardHeader>
-                <h2 className="text-sm font-semibold text-gray-700">보유 자산</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-gray-700">보유 자산</h2>
+                  <button
+                    onClick={() => setAddModalOpen(true)}
+                    className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    + 자산 추가
+                  </button>
+                </div>
               </CardHeader>
               <PortfolioTable />
             </Card>
@@ -166,5 +177,6 @@ export function DashboardShell() {
         </div>
       </main>
     </div>
+    <AddHoldingModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
   );
 }
