@@ -88,9 +88,20 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex flex-col">
-            <span className="font-semibold text-gray-900">{holding.ticker}</span>
-            {holding.assetType === 'kr-stock' && quote?.name && (
-              <span className="text-xs text-gray-400">{quote.name}</span>
+            {holding.assetType === 'kr-stock' ? (
+              <>
+                <span className="font-semibold text-gray-900">
+                  {holding.name || quote?.name || holding.ticker}
+                </span>
+                <span className="text-xs text-gray-400">{holding.ticker}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-gray-900">{holding.ticker}</span>
+                {quote?.name && (
+                  <span className="text-xs text-gray-400">{quote.name}</span>
+                )}
+              </>
             )}
           </div>
           <AssetTypeBadge type={holding.assetType} />
