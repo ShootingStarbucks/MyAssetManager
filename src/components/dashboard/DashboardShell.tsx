@@ -58,6 +58,7 @@ export function DashboardShell() {
   const riskProfile = summary?.riskMetrics?.riskProfile ?? 'CONSERVATIVE';
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <header className="bg-white border-b border-gray-200">
@@ -178,5 +179,6 @@ export function DashboardShell() {
       </main>
     </div>
     <AddHoldingModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
+    </>
   );
 }
