@@ -7,6 +7,7 @@ import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { AssetTypeBadge, ManualPriceBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
 import { toKRW, calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
+import { getKrStockKoreanName } from '@/lib/kr-stock-names';
 import { TransactionModal } from './TransactionModal';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 
@@ -91,7 +92,7 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
             {holding.assetType === 'kr-stock' ? (
               <>
                 <span className="font-semibold text-gray-900">
-                  {holding.name || quote?.name || holding.ticker}
+                  {getKrStockKoreanName(holding.ticker) || holding.name || quote?.name || holding.ticker}
                 </span>
                 <span className="text-xs text-gray-400">{holding.ticker}</span>
               </>
