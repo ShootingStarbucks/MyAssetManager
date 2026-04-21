@@ -5,7 +5,6 @@ import { signOut } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { AddHoldingForm } from './AddHoldingForm';
 import { AddHoldingModal } from './AddHoldingModal';
 import { PortfolioSummaryCard } from './PortfolioSummaryCard';
 import { PortfolioTable } from './PortfolioTable';
@@ -118,14 +117,6 @@ export function DashboardShell() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <h2 className="text-sm font-semibold text-gray-700">자산 추가</h2>
-              </CardHeader>
-              <CardContent>
-                <AddHoldingForm />
-              </CardContent>
-            </Card>
           </div>
 
           {/* 오른쪽 패널: 보유 자산 테이블 + 차트 2종 */}
