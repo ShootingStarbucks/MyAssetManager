@@ -47,7 +47,7 @@ npm install
 DATABASE_URL="file:./prisma/dev.db"
 AUTH_SECRET="..."                        # npx auth secret 으로 생성
 FINNHUB_API_KEY="..."                    # https://finnhub.io/register
-GOOGLE_GENERATIVE_AI_API_KEY="..."       # AI 인사이트 기능 (선택)
+GOOGLE_AI_API_KEY="..."                  # AI 인사이트 기능 (선택)
 NEXT_PUBLIC_REFRESH_MS="60000"           # 시세 폴링 간격 (ms)
 ```
 
