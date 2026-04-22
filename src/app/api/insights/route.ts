@@ -90,7 +90,14 @@ export async function POST() {
 
   if (rawText === undefined) {
     console.error('[POST /api/insights] All Gemini models failed with 503:', lastError);
-    return NextResponse.json({ error: 'AI 인사이트 생성에 실패했습니다' }, { status: 502 });
+    const copyablePrompt =
+      SYSTEM_INSTRUCTION +
+      '\n\n---\n\n현재 보유 자산:\n' +
+      JSON.stringify(holdings, null, 2);
+    return NextResponse.json(
+      { error: 'AI 인사이트 생성에 실패했습니다', prompt: copyablePrompt },
+      { status: 502 }
+    );
   }
 
   // 5. Parse JSON — strip markdown code fences if present
