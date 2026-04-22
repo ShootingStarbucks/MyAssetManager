@@ -24,6 +24,8 @@ export function InsightCard() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copyablePrompt, setCopyablePrompt] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch('/api/insights')
@@ -44,6 +46,8 @@ export function InsightCard() {
   async function handleGenerate() {
     setIsLoading(true);
     setError(null);
+    setCopyablePrompt(null);
+    setCopied(false);
     try {
       const res = await fetch('/api/insights', { method: 'POST' });
       if (res.status === 429) {
@@ -53,6 +57,7 @@ export function InsightCard() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setError(body.error ?? '인사이트 생성에 실패했습니다.');
+        if (body.prompt) setCopyablePrompt(body.prompt);
         return;
       }
       const data = await res.json();
@@ -129,7 +134,36 @@ export function InsightCard() {
 
         {/* Error message */}
         {error && (
-          <p className="mt-2 text-xs text-red-500">{error}</p>
+          <div className="mt-2 space-y-2">
+            <p className="text-xs text-red-500">{error}</p>
+            {copyablePrompt && (
+              <button
+                onClick={() => {
+                  const write = (text: string) => {
+                    if (navigator.clipboard) {
+                      return navigator.clipboard.writeText(text);
+                    }
+                    const el = document.createElement('textarea');
+                    el.value = text;
+                    el.style.cssText = 'position:fixed;opacity:0';
+                    document.body.appendChild(el);
+                    el.focus();
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    return Promise.resolve();
+                  };
+                  write(copyablePrompt!).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {copied ? '복사됨 ✓' : '프롬프트 복사'}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Disclaimer */}
