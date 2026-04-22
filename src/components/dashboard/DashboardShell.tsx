@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { FileBarChart2, LogOut, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { AddHoldingModal } from './AddHoldingModal';
 import { PortfolioSummaryCard } from './PortfolioSummaryCard';
@@ -63,18 +64,23 @@ export function DashboardShell() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <h1 className="text-lg font-bold text-gray-900">내 자산 관리</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{session?.user?.name ?? session?.user?.email}</span>
+          <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 mr-1">
+              <User size={14} className="text-gray-400" />
+              <span>{session?.user?.name ?? session?.user?.email}</span>
+            </div>
             <Link
               href="/report"
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             >
+              <FileBarChart2 size={15} />
               월간 리포트
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
             >
+              <LogOut size={15} />
               로그아웃
             </button>
           </div>
