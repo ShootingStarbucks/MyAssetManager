@@ -60,7 +60,24 @@ npx prisma migrate dev --name init
 npx prisma generate
 ```
 
-### 4. 개발 서버 실행
+### 4. 테스트 계정 생성 (선택)
+
+샘플 데이터가 포함된 테스트 계정을 생성합니다.
+
+```bash
+npx tsx prisma/seed.ts
+```
+
+생성되는 계정:
+
+| 항목 | 값 |
+|------|---|
+| 이메일 | `test@myasset.dev` |
+| 비밀번호 | `Test1234!` |
+
+보유 자산 7종 (AAPL, TSLA, NVDA, 삼성전자, SK하이닉스, BTC, ETH), 현금 계좌 3종, 포트폴리오 스냅샷 12개가 함께 생성됩니다.
+
+### 5. 개발 서버 실행
 
 ```bash
 npm run dev

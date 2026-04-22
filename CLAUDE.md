@@ -176,3 +176,10 @@ FINNHUB_API_KEY="..."       # https://finnhub.io/register (server-only, never NE
 KRX_API_KEY="..."           # https://openapi.krx.co.kr (optional, server-only — falls back to Yahoo Finance if absent)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```
+
+## Test Account (Chrome MCP)
+
+When testing with Chrome MCP browser automation and the login screen appears, use:
+
+- Email: `test@myasset.dev`
+- Password: `Test1234!`
