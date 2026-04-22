@@ -139,9 +139,24 @@ export function InsightCard() {
             {copyablePrompt && (
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(copyablePrompt);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
+                  const write = (text: string) => {
+                    if (navigator.clipboard) {
+                      return navigator.clipboard.writeText(text);
+                    }
+                    const el = document.createElement('textarea');
+                    el.value = text;
+                    el.style.cssText = 'position:fixed;opacity:0';
+                    document.body.appendChild(el);
+                    el.focus();
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    return Promise.resolve();
+                  };
+                  write(copyablePrompt!).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
                 }}
                 className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
