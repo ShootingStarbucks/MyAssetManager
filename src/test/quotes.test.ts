@@ -17,6 +17,12 @@ vi.mock('@/lib/coingecko-client', () => ({
   fetchCryptoQuotes: vi.fn(),
 }))
 
+vi.mock('@/lib/quote-cache', () => ({
+  getCached: vi.fn().mockReturnValue(null),
+  setCached: vi.fn(),
+  getOrFetch: vi.fn().mockImplementation((_key: string, fetcher: () => Promise<unknown>) => fetcher()),
+}))
+
 import { POST } from '@/app/api/quotes/route'
 import { auth } from '@/auth'
 import { fetchUsStockQuote } from '@/lib/finnhub-client'

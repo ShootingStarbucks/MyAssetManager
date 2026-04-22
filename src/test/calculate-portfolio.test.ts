@@ -111,10 +111,10 @@ describe('calculateUnrealizedPnL()', () => {
     expect(result.avgCostKRW).toBeNull()
   })
 
-  it('quote 없으면 모두 null 반환', () => {
+  it('quote 없으면 unrealizedPnL 0 반환', () => {
     const holding = makeHolding({ avgCost: 80, quote: null })
     const result = calculateUnrealizedPnL(holding)
-    expect(result.unrealizedPnL).toBeNull()
+    expect(result.unrealizedPnL).toBe(0)
   })
 
   it('KRW 자산 — 현재가 > 평단가 → 양수 수익', () => {
