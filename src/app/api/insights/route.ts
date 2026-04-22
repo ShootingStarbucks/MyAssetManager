@@ -59,7 +59,7 @@ export async function POST() {
   });
 
   // 4. Call Google Gemini API with fallback models
-  const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
   let rawText: string | undefined;
@@ -78,18 +78,13 @@ export async function POST() {
       break;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (/503|service unavailable|429|too many requests/i.test(msg)) {
-        console.warn(`[POST /api/insights] Model ${modelName} returned 503/429, trying next model`);
-        lastError = e;
-        continue;
-      }
-      console.error('[POST /api/insights] Gemini API error:', e);
-      return NextResponse.json({ error: 'AI 인사이트 생성에 실패했습니다' }, { status: 502 });
+      console.warn(`[POST /api/insights] Model ${modelName} failed: ${msg.split('\n')[0]}`);
+      lastError = e;
     }
   }
 
   if (rawText === undefined) {
-    console.error('[POST /api/insights] All Gemini models failed with 503:', lastError);
+    console.error('[POST /api/insights] All Gemini models failed:', lastError);
     const copyablePrompt =
       SYSTEM_INSTRUCTION +
       '\n\n---\n\n현재 보유 자산:\n' +
