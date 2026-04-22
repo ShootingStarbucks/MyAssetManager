@@ -78,8 +78,8 @@ export async function POST() {
       break;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (/503|service unavailable/i.test(msg)) {
-        console.warn(`[POST /api/insights] Model ${modelName} returned 503, trying next model`);
+      if (/503|service unavailable|429|too many requests/i.test(msg)) {
+        console.warn(`[POST /api/insights] Model ${modelName} returned 503/429, trying next model`);
         lastError = e;
         continue;
       }
