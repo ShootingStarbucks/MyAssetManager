@@ -39,6 +39,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   // 사설 IP 대역에서의 cross-origin 개발 서버 접근 허용 (모바일/다른 기기 테스트용)
   allowedDevOrigins: [localIp],
   async headers() {
