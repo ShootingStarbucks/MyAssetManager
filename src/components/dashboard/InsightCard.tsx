@@ -26,6 +26,9 @@ export function InsightCard() {
   const [error, setError] = useState<string | null>(null);
   const [copyablePrompt, setCopyablePrompt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/insights')
@@ -71,6 +74,49 @@ export function InsightCard() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleApplyPastedJson() {
+    setPasteError(null);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(pasteText);
+    } catch {
+      setPasteError('유효한 JSON 형식이 아닙니다.');
+      return;
+    }
+    const obj = parsed as Record<string, unknown>;
+    if (
+      typeof obj.summary !== 'string' ||
+      typeof obj.details !== 'object' ||
+      obj.details === null
+    ) {
+      setPasteError('summary와 details 필드가 필요합니다.');
+      return;
+    }
+    const details = obj.details as Record<string, unknown>;
+    if (
+      typeof details.portfolioSummary !== 'string' ||
+      typeof details.riskWarning !== 'string' ||
+      typeof details.rebalanceSuggestion !== 'string' ||
+      typeof details.marketAdvice !== 'string'
+    ) {
+      setPasteError('details에 portfolioSummary, riskWarning, rebalanceSuggestion, marketAdvice 필드가 필요합니다.');
+      return;
+    }
+    const manualInsight: Insight = {
+      id: `manual-${Date.now()}`,
+      summary: obj.summary,
+      details: details as unknown as InsightDetails,
+      isStale: false,
+      createdAt: new Date().toISOString(),
+    };
+    setInsight(manualInsight);
+    setIsExpanded(true);
+    setError(null);
+    setCopyablePrompt(null);
+    setShowPasteModal(false);
+    setPasteText('');
   }
 
   return (
@@ -137,32 +183,72 @@ export function InsightCard() {
           <div className="mt-2 space-y-2">
             <p className="text-xs text-red-500">{error}</p>
             {copyablePrompt && (
-              <button
-                onClick={() => {
-                  const write = (text: string) => {
-                    if (navigator.clipboard) {
-                      return navigator.clipboard.writeText(text);
-                    }
-                    const el = document.createElement('textarea');
-                    el.value = text;
-                    el.style.cssText = 'position:fixed;opacity:0';
-                    document.body.appendChild(el);
-                    el.focus();
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    return Promise.resolve();
-                  };
-                  write(copyablePrompt!).then(() => {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  });
-                }}
-                className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {copied ? '복사됨 ✓' : '프롬프트 복사'}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    const write = (text: string) => {
+                      if (navigator.clipboard) {
+                        return navigator.clipboard.writeText(text);
+                      }
+                      const el = document.createElement('textarea');
+                      el.value = text;
+                      el.style.cssText = 'position:fixed;opacity:0';
+                      document.body.appendChild(el);
+                      el.focus();
+                      el.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(el);
+                      return Promise.resolve();
+                    };
+                    write(copyablePrompt!).then(() => {
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    });
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  {copied ? '복사됨 ✓' : '프롬프트 복사'}
+                </button>
+                <button
+                  onClick={() => { setShowPasteModal(true); setPasteError(null); setPasteText(''); }}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  JSON 결과 붙여넣기
+                </button>
+              </div>
             )}
+          </div>
+        )}
+
+        {/* Paste JSON Modal */}
+        {showPasteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl mx-4">
+              <h3 className="mb-1 text-sm font-semibold text-gray-800">AI 결과 JSON 붙여넣기</h3>
+              <p className="mb-3 text-xs text-gray-500">다른 AI에서 받은 JSON 응답을 아래에 붙여넣으세요.</p>
+              <textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder={'{\n  "summary": "...",\n  "details": {\n    "portfolioSummary": "...",\n    "riskWarning": "...",\n    "rebalanceSuggestion": "...",\n    "marketAdvice": "..."\n  }\n}'}
+                className="w-full rounded-lg border border-gray-300 p-3 text-xs font-mono text-gray-800 focus:border-blue-400 focus:outline-none resize-none"
+                rows={10}
+              />
+              {pasteError && <p className="mt-1.5 text-xs text-red-500">{pasteError}</p>}
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => setShowPasteModal(false)}
+                  className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleApplyPastedJson}
+                  className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                >
+                  확인
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
