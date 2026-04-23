@@ -19,12 +19,12 @@ export interface GetOrFetchNewsResult {
 }
 
 export async function getOrFetchNews(
-  holdingId: string,
+  ticker: string,
   query: string,
   maxAgeMs: number = DEFAULT_MAX_AGE_MS
 ): Promise<GetOrFetchNewsResult> {
   const cached = await (prisma as any).newsSentiment.findUnique({
-    where: { holdingId },
+    where: { ticker },
   })
 
   if (cached) {

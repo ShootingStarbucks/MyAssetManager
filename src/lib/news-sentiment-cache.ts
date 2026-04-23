@@ -3,13 +3,13 @@ import type { SentimentLabel, NaverNewsItem, StockDetailResult } from '@/types/s
 
 export const SENTIMENT_CACHE_TTL_MS = 60 * 60 * 1000
 
-export async function getCachedSentiment(holdingId: string): Promise<StockDetailResult | null> {
-  const record = await prisma.newsSentiment.findUnique({ where: { holdingId } })
+export async function getCachedSentiment(ticker: string): Promise<StockDetailResult | null> {
+  const record = await prisma.newsSentiment.findUnique({ where: { ticker } })
   if (!record) return null
   if (Date.now() - record.analyzedAt.getTime() > SENTIMENT_CACHE_TTL_MS) return null
 
   return {
-    holdingId: record.holdingId,
+    holdingId: '',
     ticker: record.ticker,
     sentiment: record.sentiment as SentimentLabel,
     score: record.score,
@@ -22,7 +22,6 @@ export async function getCachedSentiment(holdingId: string): Promise<StockDetail
 }
 
 export interface SaveSentimentInput {
-  holdingId: string
   userId: string
   ticker: string
   sentiment: SentimentLabel
@@ -38,11 +37,10 @@ export async function saveSentimentCache(input: SaveSentimentInput): Promise<voi
   const analyzedAt = new Date()
 
   await prisma.newsSentiment.upsert({
-    where: { holdingId: input.holdingId },
+    where: { ticker: input.ticker },
     create: {
-      holdingId: input.holdingId,
-      userId: input.userId,
       ticker: input.ticker,
+      userId: input.userId,
       sentiment: input.sentiment,
       score: input.score,
       summary: input.summary,
@@ -52,7 +50,6 @@ export async function saveSentimentCache(input: SaveSentimentInput): Promise<voi
     },
     update: {
       userId: input.userId,
-      ticker: input.ticker,
       sentiment: input.sentiment,
       score: input.score,
       summary: input.summary,

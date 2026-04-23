@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     name: holding.name,
   })
 
-  const { newsItems, source, cachedRecord } = await getOrFetchNews(holdingId, query)
+  const { newsItems, source, cachedRecord } = await getOrFetchNews(holding.ticker, query)
 
   if (source === 'cache' && cachedRecord) {
     const result: StockDetailResult = {
@@ -62,11 +62,10 @@ export async function POST(req: NextRequest) {
   const analysis = await analyzeSentiment(holding.ticker, holding.name ?? holding.ticker, newsItems)
 
   await (prisma as any).newsSentiment.upsert({
-    where: { holdingId },
+    where: { ticker: holding.ticker },
     create: {
-      holdingId,
-      userId,
       ticker: holding.ticker,
+      userId,
       sentiment: analysis.sentiment,
       score: analysis.score,
       summary: analysis.summary,
