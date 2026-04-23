@@ -3,7 +3,7 @@ name: Deploy to OCI
 on:
   pull_request:
     branches:
-      - release/**
+      - 'release/**'
     types:
       - closed
 
