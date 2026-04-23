@@ -30,7 +30,7 @@ jobs:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          source: myasset-manager.tar.gz
+          source: "myasset-manager.tar.gz,prisma"
           target: ~/
 
       - name: Run deploy script via SSH
