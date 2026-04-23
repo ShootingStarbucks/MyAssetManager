@@ -20,6 +20,7 @@ model User {
   cashAccounts       CashAccount[]
   snapshots          PortfolioSnapshot[]
   insights           Insight[]
+  newsSentiments     NewsSentiment[]
   createdAt          DateTime            @default(now())
 }
 
@@ -43,9 +44,10 @@ model Holding {
   currentPrice Float?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  name         String?
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  newsSentiment NewsSentiment?
+  name          String?
   exchange     String?
   currency     String?
   purchaseDate DateTime?
@@ -94,4 +96,21 @@ model CashAccount {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NewsSentiment {
+  id         String   @id @default(cuid())
+  holdingId  String   @unique
+  userId     String
+  ticker     String
+  sentiment  String
+  score      Float
+  summary    String
+  keyReasons String
+  newsItems  String
+  analyzedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  holding    Holding  @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
