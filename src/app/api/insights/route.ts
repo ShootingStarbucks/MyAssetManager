@@ -58,20 +58,41 @@ export async function POST() {
     select: { ticker: true, quantity: true },
   });
 
-  // 4. Call Google Gemini API
+  // 4. Call Google Gemini API with fallback models
+  const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    systemInstruction: SYSTEM_INSTRUCTION,
-  });
 
-  let rawText: string;
-  try {
-    const result = await model.generateContent(JSON.stringify(holdings));
-    rawText = result.response.text();
-  } catch (e) {
-    console.error('[POST /api/insights] Gemini API error:', e);
-    return NextResponse.json({ error: 'AI 인사이트 생성에 실패했습니다' }, { status: 502 });
+  let rawText: string | undefined;
+  let lastError: unknown;
+  for (const modelName of FALLBACK_MODELS) {
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: SYSTEM_INSTRUCTION,
+    });
+    try {
+      const result = await model.generateContent(JSON.stringify(holdings));
+      rawText = result.response.text();
+      if (modelName !== FALLBACK_MODELS[0]) {
+        console.warn(`[POST /api/insights] Using fallback model: ${modelName}`);
+      }
+      break;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(`[POST /api/insights] Model ${modelName} failed: ${msg.split('\n')[0]}`);
+      lastError = e;
+    }
+  }
+
+  if (rawText === undefined) {
+    console.error('[POST /api/insights] All Gemini models failed:', lastError);
+    const copyablePrompt =
+      SYSTEM_INSTRUCTION +
+      '\n\n---\n\n현재 보유 자산:\n' +
+      JSON.stringify(holdings, null, 2);
+    return NextResponse.json(
+      { error: 'AI 인사이트 생성에 실패했습니다', prompt: copyablePrompt },
+      { status: 502 }
+    );
   }
 
   // 5. Parse JSON — strip markdown code fences if present

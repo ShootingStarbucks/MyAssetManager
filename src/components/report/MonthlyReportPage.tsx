@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Spinner } from '@/components/ui/Spinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -75,22 +77,33 @@ export function MonthlyReportPage() {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
-          월간 리포트 &mdash; {year}년 {month}월
-        </h1>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            <LayoutDashboard size={14} />
+            대시보드
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">
+            월간 리포트 &mdash; {year}년 {month}월
+          </h1>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrev}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
           >
-            ◀ 이전 달
+            <ChevronLeft size={15} />
+            이전 달
           </button>
           <button
             onClick={handleNext}
             disabled={isAtCurrentMonth}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            다음 달 ▶
+            다음 달
+            <ChevronRight size={15} />
           </button>
         </div>
       </div>

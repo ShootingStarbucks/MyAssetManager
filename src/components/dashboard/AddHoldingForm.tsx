@@ -31,7 +31,11 @@ function deriveCurrency(exchange: string | undefined, assetType: string): 'KRW' 
 
 type TabType = AssetType | 'cash';
 
-export function AddHoldingForm() {
+interface AddHoldingFormProps {
+  onSuccess?: () => void;
+}
+
+export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
   const [activeTab, setActiveTab] = useState<TabType>('us-stock');
 
   // Stock/crypto fields
@@ -146,7 +150,7 @@ export function AddHoldingForm() {
         memo: memo || undefined,
       },
       {
-        onSuccess: resetStockForm,
+        onSuccess: () => { resetStockForm(); onSuccess?.(); },
         onError: (err) => setFormError(err.message),
       }
     );
@@ -173,7 +177,7 @@ export function AddHoldingForm() {
         memo: cashMemo || undefined,
       },
       {
-        onSuccess: resetCashForm,
+        onSuccess: () => { resetCashForm(); onSuccess?.(); },
         onError: (err) => setCashError(err.message),
       }
     );

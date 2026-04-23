@@ -7,7 +7,9 @@ import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { AssetTypeBadge, ManualPriceBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
 import { toKRW, calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
+import { getKrStockKoreanName } from '@/lib/kr-stock-names';
 import { TransactionModal } from './TransactionModal';
+import { StockDetailModal } from './StockDetailModal';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 
 interface HoldingRowProps {
@@ -23,6 +25,7 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
   const [editAvgCost, setEditAvgCost] = useState(holding.avgCost != null ? String(holding.avgCost) : '');
   const [showTxModal, setShowTxModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [modalQty, setModalQty] = useState('');
   const [modalAvgCost, setModalAvgCost] = useState('');
@@ -87,10 +90,21 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex flex-col">
-            <span className="font-semibold text-gray-900">{holding.ticker}</span>
-            {holding.assetType === 'kr-stock' && quote?.name && (
-              <span className="text-xs text-gray-400">{quote.name}</span>
+          <div className="flex flex-col cursor-pointer hover:opacity-75 transition-opacity" onClick={() => setShowDetailModal(true)}>
+            {holding.assetType === 'kr-stock' ? (
+              <>
+                <span className="font-semibold text-gray-900">
+                  {getKrStockKoreanName(holding.ticker) || holding.name || quote?.name || holding.ticker}
+                </span>
+                <span className="text-xs text-gray-400">{holding.ticker}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-gray-900">{holding.ticker}</span>
+                {quote?.name && (
+                  <span className="text-xs text-gray-400">{quote.name}</span>
+                )}
+              </>
             )}
           </div>
           <AssetTypeBadge type={holding.assetType} />
@@ -379,6 +393,14 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
             </div>
           </div>
         </div>,
+        document.body
+      )}
+      {showDetailModal && createPortal(
+        <StockDetailModal
+          holding={holding}
+          exchangeRate={exchangeRate}
+          onClose={() => setShowDetailModal(false)}
+        />,
         document.body
       )}
     </tr>

@@ -8,6 +8,7 @@ const QUOTES_LIMIT = { windowMs: 60 * 1000, max: 10 };
 import { fetchUsStockQuote } from '@/lib/finnhub-client';
 import { fetchKrStockQuote } from '@/lib/yahoo-finance-client';
 import { fetchCryptoQuotes } from '@/lib/coingecko-client';
+import { getCached, getOrFetch } from '@/lib/quote-cache';
 import type { QuoteResult } from '@/types/asset.types';
 import type { ApiError } from '@/types/api.types';
 
@@ -57,9 +58,11 @@ export async function POST(req: NextRequest) {
 
   const results: QuoteResult[] = [];
 
-  // 미국 주식: 개별 병렬 요청
+  // 미국 주식: 캐시 우선, 미스 시 Finnhub 호출 (in-flight 중복 제거)
   const usResults = await Promise.allSettled(
-    usStocks.map((h: HoldingItem) => fetchUsStockQuote(h.ticker))
+    usStocks.map((h: HoldingItem) =>
+      getOrFetch(`${h.ticker}:us-stock`, () => fetchUsStockQuote(h.ticker))
+    )
   );
   usStocks.forEach((h: HoldingItem, i: number) => {
     const result = usResults[i];
@@ -75,9 +78,11 @@ export async function POST(req: NextRequest) {
     }
   });
 
-  // 한국 주식: 개별 병렬 요청
+  // 한국 주식: 캐시 우선, 미스 시 Yahoo Finance 호출
   const krResults = await Promise.allSettled(
-    krStocks.map((h: HoldingItem) => fetchKrStockQuote(h.ticker))
+    krStocks.map((h: HoldingItem) =>
+      getOrFetch(`${h.ticker}:kr-stock`, () => fetchKrStockQuote(h.ticker))
+    )
   );
   krStocks.forEach((h: HoldingItem, i: number) => {
     const result = krResults[i];
@@ -93,21 +98,53 @@ export async function POST(req: NextRequest) {
     }
   });
 
-  // 암호화폐: 배치 요청
+  // 암호화폐: 캐시 히트 분리 후 미스된 것만 단일 배치 요청
   if (cryptos.length > 0) {
-    try {
-      const cryptoQuotes = await fetchCryptoQuotes(cryptos.map((h: HoldingItem) => h.ticker));
-      cryptoQuotes.forEach((q) => {
-        results.push({ ticker: q.ticker, quote: q });
-      });
-    } catch (e) {
-      cryptos.forEach((h: HoldingItem) => {
-        const code = (e as NodeJS.ErrnoException).code;
-        results.push({
-          ticker: h.ticker,
-          quote: null,
-          error: (code as QuoteResult['error']) ?? 'NETWORK_ERROR',
-        });
+    const missedTickers: string[] = [];
+    for (const h of cryptos) {
+      const hit = getCached(`${h.ticker}:crypto`);
+      if (hit) {
+        results.push({ ticker: h.ticker, quote: hit });
+      } else {
+        missedTickers.push(h.ticker);
+      }
+    }
+
+    if (missedTickers.length > 0) {
+      // 요청 범위 내 배치 Promise 공유 — 미스된 티커를 한 번만 CoinGecko에 요청
+      let batchPromise: Promise<import('@/types/asset.types').NormalizedQuote[]> | null = null;
+
+      const missedResults = await Promise.allSettled(
+        missedTickers.map((ticker) =>
+          getOrFetch(`${ticker}:crypto`, () => {
+            if (!batchPromise) batchPromise = fetchCryptoQuotes(missedTickers);
+            return batchPromise.then((quotes) => {
+              const found = quotes.find(
+                (q) => q.ticker.toUpperCase() === ticker.toUpperCase()
+              );
+              if (!found) {
+                const err = new Error(`Invalid coin: ${ticker}`);
+                (err as NodeJS.ErrnoException).code = 'INVALID_TICKER';
+                throw err;
+              }
+              return found;
+            });
+          })
+        )
+      );
+
+      missedTickers.forEach((ticker, i) => {
+        const result = missedResults[i];
+        if (result.status === 'fulfilled') {
+          results.push({ ticker, quote: result.value });
+        } else {
+          const code = (result.reason as NodeJS.ErrnoException).code;
+          results.push({
+            ticker,
+            quote: null,
+            error: (code as QuoteResult['error']) ?? 'NETWORK_ERROR',
+          });
+        }
       });
     }
   }
