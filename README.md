@@ -99,6 +99,85 @@ npx prisma generate                    # 클라이언트 재생성
 npx prisma studio                      # DB GUI 실행
 ```
 
+## 무중단 배포 (Blue-Green)
+
+GitHub Actions + Docker Blue-Green 방식으로 서비스 중단 없이 배포합니다.
+
+### 배포 흐름
+
+```
+로컬 코드 수정
+  → release/** 브랜치로 PR Merge
+  → GitHub Actions 자동 실행
+      ├─ Docker 이미지 빌드
+      ├─ 이미지(tar.gz) + prisma/ + prisma.config.ts → SCP 전송
+      └─ SSH로 deploy.sh 실행
+           ├─ prisma migrate deploy  (DB 마이그레이션 자동 적용)
+           ├─ Blue/Green 컨테이너 교체
+           ├─ 헬스체크 통과 확인
+           ├─ Nginx 트래픽 전환
+           └─ 이전 컨테이너 종료
+```
+
+### GitHub Secrets 설정
+
+저장소 **Settings → Secrets and variables → Actions**에서 아래 3개를 등록합니다.
+
+| Secret | 값 |
+|--------|---|
+| `OCI_HOST` | OCI VM 공인 IP |
+| `OCI_USER` | `ubuntu` |
+| `OCI_SSH_KEY` | SSH 개인키 전체 내용 (`-----BEGIN ...` 포함) |
+
+### 서버 구조
+
+```
+/home/ubuntu/
+├── deploy.sh              # 배포 스크립트 (Blue-Green 교체 로직)
+├── prisma/                # 마이그레이션 파일 (GitHub Actions가 전송)
+├── prisma.config.ts       # Prisma 설정 (GitHub Actions가 전송)
+├── myasset-manager.tar.gz # Docker 이미지 (GitHub Actions가 전송)
+└── app/
+    └── data/
+        └── dev.db         # SQLite DB 파일 (볼륨 마운트로 영구 보관)
+
+# Nginx 설정
+/etc/nginx/sites-available/nextjs
+```
+
+- **Blue 컨테이너**: 포트 3000
+- **Green 컨테이너**: 포트 3001
+- Nginx가 현재 활성 컨테이너로 트래픽을 라우팅하며, 배포 시 포트를 교체합니다.
+
+### 스키마 변경 시 배포 절차
+
+DB 스키마를 변경할 때는 반드시 마이그레이션 파일을 커밋에 포함해야 합니다.
+
+```bash
+# 1. 스키마 수정 후 마이그레이션 생성
+npx prisma migrate dev --name 변경내용
+
+# 2. 마이그레이션 파일을 함께 커밋
+git add prisma/migrations prisma/schema.prisma
+git commit -m "feat(schema): ..."
+
+# 3. release/** 브랜치로 PR Merge → 자동 배포
+```
+
+> 서버에서 `prisma migrate deploy`가 자동 실행되므로 별도 SSH 접속 없이 마이그레이션이 적용됩니다.
+
+### 롤백
+
+헬스체크 실패 시 deploy.sh가 자동으로 이전 컨테이너로 롤백합니다. 수동 롤백이 필요하면 서버에 SSH 접속 후 이전 이미지로 컨테이너를 재시작합니다.
+
+### 주의사항
+
+- `*.db` 파일은 `.gitignore`에 포함되어 Git에 올라가지 않습니다. DB는 서버 볼륨에서만 유지됩니다.
+- 서버의 `/home/ubuntu/.env.local`에 `DATABASE_URL` 등 환경변수가 설정되어 있어야 합니다.
+- 워크플로우 트리거는 `release/**` 브랜치로의 PR Merge에만 반응합니다. 직접 push는 트리거되지 않습니다.
+
+---
+
 ## 아키텍처
 
 ### 데이터 흐름

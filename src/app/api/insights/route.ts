@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { getUserAiApiKey, ServerKeyLimitError } from '@/lib/get-user-ai-key';
 
 const SYSTEM_INSTRUCTION =
   '당신은 개인 자산관리 전문 AI 어드바이저입니다.\n아래 포트폴리오 데이터를 분석하여 다음 4가지 항목으로 인사이트를 제공하세요.\n절대로 특정 종목의 매수/매도를 직접적으로 권유하지 마세요.\n모든 분석은 현재 데이터 기반이며, 투자 결정은 사용자 본인의 판단임을 명시하세요.\n\n[인사이트 구성]\n1. 포트폴리오 요약: 2~3문장\n2. 리스크 경고: 편중/위험 감지 시 구체적 경고 (없으면 \'안정적\')\n3. 리밸런싱 제안: 목표 비중 대비 조정 필요 항목\n4. 시장 상황 조언: 거시경제 흐름 기반 조언\n\n[출력 형식 — 반드시 아래 JSON으로만 응답]\n{\n  "summary": "전체를 한 문장으로 압축",\n  "details": {\n    "portfolioSummary": "...",\n    "riskWarning": "...",\n    "rebalanceSuggestion": "...",\n    "marketAdvice": "..."\n  }\n}';
@@ -60,7 +61,19 @@ export async function POST() {
 
   // 4. Call Google Gemini API with fallback models
   const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+  let aiApiKey: string;
+  try {
+    aiApiKey = await getUserAiApiKey(userId);
+  } catch (e) {
+    if (e instanceof ServerKeyLimitError) {
+      return NextResponse.json(
+        { error: e.message },
+        { status: 429 }
+      );
+    }
+    throw e;
+  }
+  const genAI = new GoogleGenerativeAI(aiApiKey);
 
   let rawText: string | undefined;
   let lastError: unknown;

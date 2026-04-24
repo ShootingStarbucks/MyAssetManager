@@ -15,7 +15,7 @@ interface StockDetailModalProps {
 }
 
 export function StockDetailModal({ holding, exchangeRate, onClose }: StockDetailModalProps) {
-  const { data, isLoading, isError } = useStockDetail(holding.id);
+  const { data, isLoading, isError, error } = useStockDetail(holding.id);
   const { unrealizedPnL, unrealizedPnLPercent } = calculateUnrealizedPnL(holding);
 
   const isKrStock = holding.assetType === 'kr-stock';
@@ -162,7 +162,9 @@ export function StockDetailModal({ holding, exchangeRate, onClose }: StockDetail
           )}
 
           {!isLoading && (isError || data?.error) && (
-            <p className="text-sm text-gray-400">분석 정보를 불러올 수 없습니다.</p>
+            <p className="text-sm text-gray-400">
+              {isError && error instanceof Error ? error.message : '분석 정보를 불러올 수 없습니다.'}
+            </p>
           )}
 
           {!isLoading && !isError && data && !data.error && (

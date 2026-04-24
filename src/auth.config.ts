@@ -2,6 +2,7 @@ import type { NextAuthConfig } from 'next-auth';
 
 // Edge Runtime 호환 설정 (미들웨어에서 사용 - Prisma 없음)
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',

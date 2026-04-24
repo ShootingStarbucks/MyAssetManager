@@ -23,7 +23,8 @@ const NEUTRAL_RESULT: SentimentAnalysisResult = {
 export async function analyzeSentiment(
   ticker: string,
   assetName: string,
-  newsItems: NaverNewsItem[]
+  newsItems: NaverNewsItem[],
+  apiKey?: string
 ): Promise<SentimentAnalysisResult> {
   if (newsItems.length === 0) {
     return NEUTRAL_RESULT
@@ -35,7 +36,7 @@ export async function analyzeSentiment(
 
   const userPrompt = `종목: ${assetName} (${ticker})\n\n최근 뉴스:\n${newsText}`
 
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
+  const genAI = new GoogleGenerativeAI(apiKey ?? process.env.GOOGLE_AI_API_KEY!)
 
   let rawText: string | undefined
   for (const modelName of FALLBACK_MODELS) {
