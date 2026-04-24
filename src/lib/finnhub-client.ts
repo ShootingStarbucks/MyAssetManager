@@ -63,3 +63,37 @@ export async function searchUsStocks(query: string): Promise<SearchResult[]> {
     .slice(0, 8)
     .map((item) => ({ ticker: item.symbol, name: item.description }));
 }
+
+/**
+ * Fetch the closing price of a US stock for the nearest trading day
+ * at or before targetDate. Looks back up to 7 days to handle weekends/holidays.
+ * @param apiKey - Finnhub API key to use
+ * @param ticker - e.g. "AAPL"
+ * @param targetDate - "YYYY-MM-DD"
+ * @returns close price or null if no data available
+ */
+export async function fetchUsStockHistoricalPrice(
+  apiKey: string,
+  ticker: string,
+  targetDate: string
+): Promise<number | null> {
+  const to = new Date(targetDate + 'T23:59:59Z');
+  const from = new Date(targetDate + 'T00:00:00Z');
+  from.setUTCDate(from.getUTCDate() - 7);
+
+  const fromTs = Math.floor(from.getTime() / 1000);
+  const toTs = Math.floor(to.getTime() / 1000);
+
+  try {
+    const res = await fetch(
+      `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=D&from=${fromTs}&to=${toTs}&token=${apiKey}`,
+      { cache: 'no-store' }
+    );
+    if (!res.ok) return null;
+    const data: { s: string; c?: number[] } = await res.json();
+    if (data.s !== 'ok' || !data.c || data.c.length === 0) return null;
+    return data.c[data.c.length - 1] ?? null;
+  } catch {
+    return null;
+  }
+}
