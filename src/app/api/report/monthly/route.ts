@@ -142,12 +142,12 @@ export async function GET(req: NextRequest) {
   if (isCurrentMonth) {
     // Current month: use existing avgCost vs currentPrice logic (all-time return)
     const holdingsWithReturn = holdings
-      .filter((h) => h.currentPrice !== null && h.avgCost !== null && (h.avgCost as number) !== 0)
-      .map((h) => ({
+      .filter((h: any) => h.currentPrice !== null && h.avgCost !== null && (h.avgCost as number) !== 0)
+      .map((h: any) => ({
         ticker: h.ticker as string,
         returnPercent: (((h.currentPrice as number) - (h.avgCost as number)) / (h.avgCost as number)) * 100,
       }));
-    holdingsWithReturn.sort((a, b) => b.returnPercent - a.returnPercent);
+    holdingsWithReturn.sort((a: { returnPercent: number }, b: { returnPercent: number }) => b.returnPercent - a.returnPercent);
     best = holdingsWithReturn[0] ?? null;
     worst = holdingsWithReturn[holdingsWithReturn.length - 1] ?? null;
     if (best && worst && best.ticker === worst.ticker) worst = null;
@@ -159,7 +159,7 @@ export async function GET(req: NextRequest) {
     const apiKey = personalFinnhubKey!;
 
     const results = await Promise.allSettled(
-      holdings.map(async (h) => {
+      holdings.map(async (h: any) => {
         let startPrice: number | null = null;
         let endPrice: number | null = null;
 
