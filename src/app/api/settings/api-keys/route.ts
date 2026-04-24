@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   const isValid = await validateGeminiKey(apiKey);
   if (!isValid) {
     return NextResponse.json(
-      { error: { code: 'INVALID_KEY', message: '유효하지 않은 API 키입니다. Google AI Studio에서 발급한 키를 확인해주세요.' } satisfies ApiError },
+      { error: { code: 'VALIDATION_ERROR', message: '유효하지 않은 API 키입니다. Google AI Studio에서 발급한 키를 확인해주세요.' } satisfies ApiError },
       { status: 400 }
     );
   }
