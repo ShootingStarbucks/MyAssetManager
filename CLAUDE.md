@@ -160,11 +160,26 @@ US stocks in USD, Korean stocks/crypto in KRW. `toKRW(price, currency)` in `src/
 - **UI state**: Zustand (minimal usage currently)
 - No localStorage — all holdings stored in DB (SQLite)
 
+### AI Key Management
+
+Per-user Google AI (Gemini) keys for sentiment analysis and portfolio insights:
+
+- `src/lib/crypto.ts` — AES-256-GCM encrypt/decrypt using `AUTH_SECRET` as the key seed. **Node.js runtime only — never import in Edge Runtime or `middleware.ts`.**
+- `src/lib/get-user-ai-key.ts` — Loads and decrypts the user's key from DB; falls back to `GOOGLE_AI_API_KEY` env var. Throws `ServerKeyLimitError` when the shared server key daily limit (3/day per user) is exceeded.
+- `src/app/api/settings/api-keys/route.ts` — GET (masked key status) / POST (validate via Gemini API + encrypt + store) / DELETE (remove key).
+- `src/components/dashboard/ApiKeySettingsModal.tsx` — Settings modal opened via the "설정" button in the dashboard header.
+
+**Key behavior:**
+- User has personal key → use it, no usage limit.
+- No personal key → use server `GOOGLE_AI_API_KEY`, capped at **3 requests/day** per user. Resets daily (tracked by `serverKeyUsageCount` + `serverKeyUsageDate` on User model).
+- When limit is exceeded, API routes return HTTP 429 with a user-facing message prompting key registration.
+
 ### Key Constraints
 
 - **Zod**: Pinned to v3 (`zod@^3`). v4 has no CJS build, causing module-not-found errors in Turbopack.
 - **Max 20 holdings**: Enforced in `/api/holdings/route.ts` due to Finnhub free tier limit of 60 req/min.
 - **Crypto ticker -> CoinGecko ID mapping**: Coins not in `TICKER_TO_COINGECKO_ID` map in `src/lib/coingecko-client.ts` fall back to lowercase conversion.
+- **`src/lib/crypto.ts` is Node.js only**: Uses Node.js built-in `crypto` module. Importing it in Edge Runtime (e.g., `middleware.ts`) will cause runtime errors.
 
 ## Environment Variables
 
@@ -174,6 +189,7 @@ DATABASE_URL="file:./prisma/dev.db"
 AUTH_SECRET="..."
 FINNHUB_API_KEY="..."       # https://finnhub.io/register (server-only, never NEXT_PUBLIC_)
 KRX_API_KEY="..."           # https://openapi.krx.co.kr (optional, server-only — falls back to Yahoo Finance if absent)
+GOOGLE_AI_API_KEY="..."     # Google AI Studio key — shared fallback when users have no personal key (server-only)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```
 
