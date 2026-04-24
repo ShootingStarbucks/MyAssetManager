@@ -15,6 +15,7 @@ model User {
   cashBalance        Float               @default(0)
   exchangeRateUSDKRW Float?
   targetAllocations  String?
+  googleAiApiKey     String?
   holdings           Holding[]
   transactions       Transaction[]
   cashAccounts       CashAccount[]
