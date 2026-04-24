@@ -93,3 +93,34 @@ export async function searchCrypto(query: string): Promise<SearchResult[]> {
     .slice(0, 8)
     .map((c) => ({ ticker: c.symbol.toUpperCase(), name: c.name }));
 }
+
+/**
+ * Fetch the KRW price of a cryptocurrency on the given date.
+ * CoinGecko history API format is "DD-MM-YYYY".
+ * @param ticker - crypto ticker symbol, e.g. "BTC"
+ * @param targetDate - "YYYY-MM-DD"
+ * @returns price in KRW or null if unavailable
+ */
+export async function fetchCryptoHistoricalPrice(
+  ticker: string,
+  targetDate: string
+): Promise<number | null> {
+  // Convert YYYY-MM-DD to DD-MM-YYYY for CoinGecko
+  const [year, month, day] = targetDate.split('-');
+  const cgDate = `${day}-${month}-${year}`;
+
+  // Get the CoinGecko coin ID using the existing mapping/helper
+  const coinId = getCoinGeckoId(ticker);
+
+  try {
+    const res = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${coinId}/history?date=${cgDate}&localization=false`,
+      { cache: 'no-store' }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data as any)?.market_data?.current_price?.krw ?? null;
+  } catch {
+    return null;
+  }
+}
