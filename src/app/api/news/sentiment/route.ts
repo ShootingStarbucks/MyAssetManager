@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { buildNewsQuery } from '@/lib/news-query-builder'
 import { getOrFetchNews } from '@/lib/news-cache'
 import { analyzeSentiment } from '@/lib/sentiment-analyzer'
-import { getUserAiApiKey } from '@/lib/get-user-ai-key'
+import { getUserAiApiKey, ServerKeyLimitError } from '@/lib/get-user-ai-key'
 import type { StockDetailResult, SentimentLabel } from '@/types/sentiment.types'
 
 const BodySchema = z.object({
@@ -60,7 +60,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result)
   }
 
-  const aiApiKey = await getUserAiApiKey(userId)
+  let aiApiKey: string;
+  try {
+    aiApiKey = await getUserAiApiKey(userId);
+  } catch (e) {
+    if (e instanceof ServerKeyLimitError) {
+      return NextResponse.json(
+        { error: (e as ServerKeyLimitError).message },
+        { status: 429 }
+      );
+    }
+    throw e;
+  }
   const analysis = await analyzeSentiment(holding.ticker, holding.name ?? holding.ticker, newsItems, aiApiKey)
 
   await (prisma as any).newsSentiment.upsert({
