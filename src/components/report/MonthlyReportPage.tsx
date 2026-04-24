@@ -23,6 +23,8 @@ type MonthlyReport = {
   riskProfile: { current: string; previous: string };
   rebalanceNeeded: boolean;
   upcomingMaturities: { institution: string; maturityDate: string; amount: number }[];
+  hasFinnhubKey: boolean;
+  isCurrentMonth: boolean;
 };
 
 type ApiError = { error: string };
@@ -70,8 +72,16 @@ export function MonthlyReportPage() {
     setMonth(next.month);
   };
 
+  const hasFinnhubKey = data?.hasFinnhubKey ?? false;
+
   const noDataError =
     error && typeof error === 'object' && 'error' in error && error.error === NO_DATA_MESSAGE;
+
+  const isFinnhubKeyRequired =
+    error != null &&
+    typeof error === 'object' &&
+    'error' in (error as object) &&
+    (error as any).error?.code === 'FINNHUB_KEY_REQUIRED';
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -89,22 +99,30 @@ export function MonthlyReportPage() {
             월간 리포트 &mdash; {year}년 {month}월
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrev}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-          >
-            <ChevronLeft size={15} />
-            이전 달
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={isAtCurrentMonth}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            다음 달
-            <ChevronRight size={15} />
-          </button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrev}
+              disabled={!hasFinnhubKey}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={15} />
+              이전 달
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={isAtCurrentMonth}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              다음 달
+              <ChevronRight size={15} />
+            </button>
+          </div>
+          {!hasFinnhubKey && !isLoading && (
+            <p className="text-xs text-amber-600 mt-1 text-center">
+              Finnhub API 키를 등록하면 이전 달을 조회할 수 있습니다.
+            </p>
+          )}
         </div>
       </div>
 
@@ -123,7 +141,14 @@ export function MonthlyReportPage() {
         </div>
       )}
 
-      {!isLoading && error && !noDataError && (
+      {!isLoading && error && !noDataError && isFinnhubKeyRequired && (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-lg font-medium mb-2">Finnhub API 키가 필요합니다</p>
+          <p className="text-sm">설정에서 개인 Finnhub API 키를 등록하면 이전 달의 수익률을 확인할 수 있습니다.</p>
+        </div>
+      )}
+
+      {!isLoading && error && !noDataError && !isFinnhubKeyRequired && (
         <ErrorMessage
           message={
             typeof error === 'object' && 'error' in error
@@ -144,7 +169,12 @@ export function MonthlyReportPage() {
             }}
           />
           <AssetClassPerformanceChart data={{ byAssetClass: data.byAssetClass }} />
-          <BestWorstCard best={data.best} worst={data.worst} />
+          <BestWorstCard
+            best={data.best}
+            worst={data.worst}
+            isCurrentMonth={data?.isCurrentMonth ?? true}
+            hasFinnhubKey={data?.hasFinnhubKey ?? false}
+          />
           <RiskChangeBadge riskProfile={data.riskProfile} />
           <NextMonthActionCard
             rebalanceNeeded={data.rebalanceNeeded}

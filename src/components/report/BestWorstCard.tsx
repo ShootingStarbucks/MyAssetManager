@@ -6,6 +6,8 @@ type HoldingStat = { ticker: string; returnPercent: number } | null;
 type Props = {
   best: HoldingStat;
   worst: HoldingStat;
+  isCurrentMonth?: boolean;
+  hasFinnhubKey?: boolean;
 };
 
 function StatCard({
@@ -36,7 +38,15 @@ function StatCard({
   );
 }
 
-export function BestWorstCard({ best, worst }: Props) {
+export function BestWorstCard({ best, worst, isCurrentMonth, hasFinnhubKey }: Props) {
+  const hasData = best !== null || worst !== null;
+  const contextNote =
+    hasData
+      ? isCurrentMonth || !hasFinnhubKey
+        ? '전체 기간 수익률 기준'
+        : '해당 월 수익률 기준'
+      : null;
+
   return (
     <Card>
       <CardHeader>
@@ -57,6 +67,9 @@ export function BestWorstCard({ best, worst }: Props) {
             textColor="text-red-600"
           />
         </div>
+        {contextNote && (
+          <p className="text-xs text-gray-400 mt-3">{contextNote}</p>
+        )}
       </CardContent>
     </Card>
   );
