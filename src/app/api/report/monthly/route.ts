@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import type { ApiError } from '@/types/api.types';
+import { getUserFinnhubKey } from '@/lib/get-user-finnhub-key';
+import { fetchUsStockHistoricalPrice } from '@/lib/finnhub-client';
+import { fetchKrStockHistoricalPrice } from '@/lib/yahoo-finance-client';
+import { fetchCryptoHistoricalPrice } from '@/lib/coingecko-client';
 
 type RiskProfile = 'AGGRESSIVE' | 'MODERATE' | 'CONSERVATIVE';
 
@@ -45,6 +49,25 @@ export async function GET(req: NextRequest) {
   const monthEnd = new Date(Date.UTC(year, month, 1));
 
   const userId = session.user.id;
+
+  const personalFinnhubKey = await getUserFinnhubKey(userId);
+  const hasFinnhubKey = personalFinnhubKey !== null;
+
+  const now = new Date();
+  const isCurrentMonth = year === now.getFullYear() && month === (now.getMonth() + 1);
+
+  if (!isCurrentMonth && !hasFinnhubKey) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'FINNHUB_KEY_REQUIRED',
+          message: '과거 월간 리포트는 개인 Finnhub API 키가 필요합니다.',
+        },
+        hasFinnhubKey: false,
+      },
+      { status: 403 }
+    );
+  }
 
   // Fetch snapshots for the requested month
   const snapshots = await prisma.portfolioSnapshot.findMany({
@@ -113,27 +136,73 @@ export async function GET(req: NextRequest) {
     returnPercent: number;
   }
 
-  const holdingsWithReturn: HoldingReturn[] = holdings
-    .filter(
-      (h: { currentPrice: number | null; avgCost: number | null }) =>
-        h.currentPrice !== null && h.avgCost !== null && h.avgCost !== 0
-    )
-    .map((h: { ticker: string; currentPrice: number; avgCost: number }) => ({
-      ticker: h.ticker,
-      returnPercent: ((h.currentPrice - h.avgCost) / h.avgCost) * 100,
-    }));
+  let best: HoldingReturn | null = null;
+  let worst: HoldingReturn | null = null;
 
-  holdingsWithReturn.sort((a: HoldingReturn, b: HoldingReturn) => b.returnPercent - a.returnPercent);
+  if (isCurrentMonth) {
+    // Current month: use existing avgCost vs currentPrice logic (all-time return)
+    const holdingsWithReturn = holdings
+      .filter((h) => h.currentPrice !== null && h.avgCost !== null && (h.avgCost as number) !== 0)
+      .map((h) => ({
+        ticker: h.ticker as string,
+        returnPercent: (((h.currentPrice as number) - (h.avgCost as number)) / (h.avgCost as number)) * 100,
+      }));
+    holdingsWithReturn.sort((a, b) => b.returnPercent - a.returnPercent);
+    best = holdingsWithReturn[0] ?? null;
+    worst = holdingsWithReturn[holdingsWithReturn.length - 1] ?? null;
+    if (best && worst && best.ticker === worst.ticker) worst = null;
+  } else {
+    // Past month: fetch real historical prices
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDayOfMonth = new Date(Date.UTC(year, month, 0));
+    const endDate = lastDayOfMonth.toISOString().slice(0, 10);
+    const apiKey = personalFinnhubKey!;
 
-  const best = holdingsWithReturn.length > 0
-    ? { ticker: holdingsWithReturn[0].ticker, returnPercent: holdingsWithReturn[0].returnPercent }
-    : null;
-  const worst = holdingsWithReturn.length > 0
-    ? {
-        ticker: holdingsWithReturn[holdingsWithReturn.length - 1].ticker,
-        returnPercent: holdingsWithReturn[holdingsWithReturn.length - 1].returnPercent,
-      }
-    : null;
+    const results = await Promise.allSettled(
+      holdings.map(async (h) => {
+        let startPrice: number | null = null;
+        let endPrice: number | null = null;
+
+        const ticker = h.ticker as string;
+        const assetType = (h as any).assetType as string | undefined;
+
+        if (assetType === 'crypto' || (!assetType && /^(BTC|ETH|SOL|ADA|XRP|DOGE|DOT|LINK|UNI|AVAX|MATIC|LTC|BCH|XLM|TRX|EOS|ATOM|ALGO|VET|FIL)$/i.test(ticker))) {
+          [startPrice, endPrice] = await Promise.all([
+            fetchCryptoHistoricalPrice(ticker, startDate),
+            fetchCryptoHistoricalPrice(ticker, endDate),
+          ]);
+        } else if (assetType === 'kr-stock' || (!assetType && /^\d{6}$/.test(ticker))) {
+          [startPrice, endPrice] = await Promise.all([
+            fetchKrStockHistoricalPrice(ticker, startDate),
+            fetchKrStockHistoricalPrice(ticker, endDate),
+          ]);
+        } else {
+          // US stock
+          [startPrice, endPrice] = await Promise.all([
+            fetchUsStockHistoricalPrice(apiKey, ticker, startDate),
+            fetchUsStockHistoricalPrice(apiKey, ticker, endDate),
+          ]);
+        }
+
+        if (!startPrice || startPrice === 0 || !endPrice) return null;
+        return {
+          ticker,
+          returnPercent: ((endPrice - startPrice) / startPrice) * 100,
+        };
+      })
+    );
+
+    const validReturns = results
+      .filter((r): r is PromiseFulfilledResult<{ ticker: string; returnPercent: number }> =>
+        r.status === 'fulfilled' && r.value !== null
+      )
+      .map((r) => r.value);
+
+    validReturns.sort((a, b) => b.returnPercent - a.returnPercent);
+    best = validReturns[0] ?? null;
+    worst = validReturns[validReturns.length - 1] ?? null;
+    if (best && worst && best.ticker === worst.ticker) worst = null;
+  }
 
   // Rebalance check: targets stock 60 / crypto 20 / cash 20
   const targets = { stock: 60, crypto: 20, cash: 20 };
@@ -143,7 +212,6 @@ export async function GET(req: NextRequest) {
     Math.abs(byAssetClass.cash - targets.cash) > 10;
 
   // Upcoming maturities: CashAccounts maturing within 30 days from now
-  const now = new Date();
   const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   const maturingAccounts = await prisma.cashAccount.findMany({
@@ -177,5 +245,7 @@ export async function GET(req: NextRequest) {
     riskProfile,
     rebalanceNeeded,
     upcomingMaturities,
+    hasFinnhubKey,
+    isCurrentMonth,
   });
 }
