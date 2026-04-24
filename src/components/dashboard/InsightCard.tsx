@@ -54,7 +54,9 @@ export function InsightCard() {
     try {
       const res = await fetch('/api/insights', { method: 'POST' });
       if (res.status === 429) {
-        setError('5분 후 다시 시도해주세요.');
+        const body = await res.json().catch(() => ({}));
+        const errBody = body as { error?: string };
+        setError(errBody.error ?? '5분 후 다시 시도해주세요.');
         return;
       }
       if (!res.ok) {

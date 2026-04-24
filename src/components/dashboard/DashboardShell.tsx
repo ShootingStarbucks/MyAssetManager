@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { FileBarChart2, LogOut, User } from 'lucide-react';
+import { FileBarChart2, LogOut, Settings, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { AddHoldingModal } from './AddHoldingModal';
+import { ApiKeySettingsModal } from './ApiKeySettingsModal';
 import { PortfolioSummaryCard } from './PortfolioSummaryCard';
 import { PortfolioTable } from './PortfolioTable';
 import { AllocationChart } from './AllocationChart';
@@ -25,6 +26,7 @@ export function DashboardShell() {
   const { data: session } = useSession();
   const { summary } = usePortfolioSummary();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   const { data: targetData } = useQuery<{ allocations: { stock: number; crypto: number; cash: number } }>({
     queryKey: ['rebalance-targets'],
@@ -76,6 +78,13 @@ export function DashboardShell() {
               <FileBarChart2 size={15} />
               월간 리포트
             </Link>
+            <button
+              onClick={() => setSettingsModalOpen(true)}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <Settings size={15} />
+              설정
+            </button>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
@@ -176,6 +185,7 @@ export function DashboardShell() {
       </main>
     </div>
     <AddHoldingModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
+    <ApiKeySettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
     </>
   );
 }
