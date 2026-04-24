@@ -107,8 +107,8 @@ export function ApiKeySettingsModal({ open, onClose }: ApiKeySettingsModalProps)
           <div>
             <p className="text-sm font-medium text-gray-700">Google AI API 키</p>
             <p className="mt-0.5 text-xs text-gray-500">
-              개인 키를 등록하면 AI 기능(감성 분석, 포트폴리오 인사이트)에 본인 키를 사용합니다.
-              키가 없으면 공유 서버 키를 사용합니다.
+              개인 키를 등록하면 AI 기능(감성 분석, 포트폴리오 인사이트)에 본인 키를 제한 없이 사용합니다.
+              키가 없으면 공유 서버 키를 <span className="font-medium text-amber-600">하루 3회</span>까지 사용할 수 있습니다.
             </p>
           </div>
 
