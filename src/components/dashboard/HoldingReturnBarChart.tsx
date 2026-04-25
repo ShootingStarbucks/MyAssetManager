@@ -11,10 +11,12 @@ import {
 } from 'recharts';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 import { calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
+import { getKrStockKoreanName } from '@/lib/kr-stock-names';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 
 interface ChartDataPoint {
   ticker: string;
+  name: string;
   pnlPercent: number;
 }
 
@@ -26,7 +28,11 @@ export function HoldingReturnBarChart() {
     .reduce<ChartDataPoint[]>((acc, h) => {
       const { unrealizedPnLPercent } = calculateUnrealizedPnL(h);
       if (unrealizedPnLPercent == null) return acc;
-      acc.push({ ticker: h.ticker, pnlPercent: unrealizedPnLPercent });
+      const name =
+        h.assetType === 'kr-stock'
+          ? (getKrStockKoreanName(h.ticker) ?? h.name ?? h.ticker)
+          : (h.name ?? h.ticker);
+      acc.push({ ticker: h.ticker, name, pnlPercent: unrealizedPnLPercent });
       return acc;
     }, [])
     .sort((a, b) => b.pnlPercent - a.pnlPercent);
@@ -44,13 +50,13 @@ export function HoldingReturnBarChart() {
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={chartData}>
-        <XAxis dataKey="ticker" tick={{ fontSize: 12 }} />
+        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
         <YAxis tickFormatter={(value: number) => `${value}%`} tick={{ fontSize: 12 }} />
         <Tooltip
           formatter={(value, _name, props) => {
             const v = typeof value === 'number' ? value : Number(value);
-            const ticker = (props as { payload?: ChartDataPoint }).payload?.ticker ?? '';
-            return [`${ticker}: ${v.toFixed(2)}%`];
+            const label = (props as { payload?: ChartDataPoint }).payload?.name ?? '';
+            return [`${label}: ${v.toFixed(2)}%`];
           }}
         />
         <Bar dataKey="pnlPercent">

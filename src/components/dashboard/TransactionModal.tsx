@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTransactions, useAddTransaction, useRemoveTransaction } from '@/hooks/use-transactions';
 import { formatPrice, formatNumber } from '@/lib/format-currency';
+import { getKrStockKoreanName } from '@/lib/kr-stock-names';
 import { Spinner } from '@/components/ui/Spinner';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 
@@ -75,7 +76,12 @@ export function TransactionModal({ holding, onClose }: TransactionModalProps) {
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{holding.ticker} 거래 내역</h2>
+            <h2 className="text-lg font-bold text-gray-900">
+            {holding.assetType === 'kr-stock'
+              ? (getKrStockKoreanName(holding.ticker) ?? holding.name ?? holding.ticker)
+              : (holding.name ?? holding.ticker)}{' '}
+            거래 내역
+          </h2>
             <p className="text-xs text-gray-400 mt-0.5">
               현재 보유: {formatNumber(holding.quantity)}주
               {holding.avgCost != null && ` · 평단가 ${formatPrice(holding.avgCost, cur)}`}
