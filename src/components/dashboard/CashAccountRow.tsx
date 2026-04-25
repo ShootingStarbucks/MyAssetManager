@@ -9,7 +9,7 @@ function formatKRW(n: number) {
 export function CashAccountRow({ account }: { account: CashAccount }) {
   const remove = useRemoveCashAccount()
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
+    <tr className="border-b border-gray-100 hover:bg-gray-50 group">
       <td className="py-3 px-4 text-sm font-medium">{account.institution}</td>
       <td className="py-3 px-4 text-sm text-gray-500">{account.accountType}</td>
       <td className="py-3 px-4 text-sm text-right font-mono">{formatKRW(account.amount)}</td>
@@ -19,7 +19,7 @@ export function CashAccountRow({ account }: { account: CashAccount }) {
       <td className="py-3 px-4 text-sm text-center text-gray-400">
         {account.maturityDate ? new Date(account.maturityDate).toLocaleDateString('ko-KR') : '—'}
       </td>
-      <td className="py-3 px-4 text-right">
+      <td className="py-3 px-4 text-right sticky right-0 bg-white group-hover:bg-gray-50 transition-colors">
         <button
           onClick={() => remove.mutate(account.id)}
           className="text-xs text-red-500 hover:underline"
