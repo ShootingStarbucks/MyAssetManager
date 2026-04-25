@@ -78,14 +78,14 @@ export function calculateConcentrationWarnings(allocations: AllocationSlice[]): 
         type: 'DANGER',
         ticker: alloc.ticker,
         ratio: alloc.percentage,
-        message: `${alloc.ticker} 비중이 ${alloc.percentage.toFixed(1)}%로 너무 높습니다 (위험)`,
+        message: `${alloc.name} 비중이 ${alloc.percentage.toFixed(1)}%로 너무 높습니다 (위험)`,
       });
     } else if (alloc.ticker && alloc.percentage > 30) {
       warnings.push({
         type: 'WARNING',
         ticker: alloc.ticker,
         ratio: alloc.percentage,
-        message: `${alloc.ticker} 비중이 ${alloc.percentage.toFixed(1)}%입니다 (주의)`,
+        message: `${alloc.name} 비중이 ${alloc.percentage.toFixed(1)}%입니다 (주의)`,
       });
     }
   }
