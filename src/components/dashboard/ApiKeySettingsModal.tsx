@@ -107,7 +107,7 @@ export function ApiKeySettingsModal({ open, onClose }: ApiKeySettingsModalProps)
         body: JSON.stringify({ apiKey: finnhubInputKey }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error((data as { message?: string }).message ?? '저장 실패');
+      if (!res.ok) throw new Error((data as { error?: { message?: string } }).error?.message ?? (data as { message?: string }).message ?? '저장 실패');
       setFinnhubHasKey(true);
       setFinnhubMaskedKey((data as { maskedKey: string }).maskedKey);
       setFinnhubInputKey('');
