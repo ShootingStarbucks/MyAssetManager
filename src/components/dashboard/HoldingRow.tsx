@@ -87,7 +87,7 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
   }
 
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors group">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex flex-col cursor-pointer hover:opacity-75 transition-opacity" onClick={() => setShowDetailModal(true)}>
@@ -271,7 +271,7 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
           <span className="text-gray-300 text-sm">-</span>
         )}
       </td>
-      <td className="px-4 py-3 text-center">
+      <td className="px-4 py-3 text-center sticky right-0 bg-white group-hover:bg-gray-50 transition-colors">
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => setShowTxModal(true)}
