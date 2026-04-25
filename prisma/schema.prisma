@@ -16,6 +16,7 @@ model User {
   exchangeRateUSDKRW Float?
   targetAllocations  String?
   googleAiApiKey      String?
+  finnhubApiKey       String?
   serverKeyUsageCount Int     @default(0)
   serverKeyUsageDate  String?
   holdings           Holding[]
