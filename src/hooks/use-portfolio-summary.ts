@@ -20,7 +20,7 @@ async function fetchSnapshots(): Promise<Snapshot[]> {
   return res.json();
 }
 
-function computeWeeklyReturn(snapshots: Snapshot[], currentTotalValue: number) {
+function computeWeeklyReturn(snapshots: Snapshot[] | undefined, currentTotalValue: number) {
   if (!snapshots || snapshots.length < 7) return { amount: null, percent: null };
   // snapshots[0] = most recent (today/yesterday), snapshots[6] = ~7 days ago
   const sevenDaysAgo = snapshots[6];
@@ -37,7 +37,7 @@ export function usePortfolioSummary() {
   const { data: cashBalance = 0 } = useCashBalance();
   const { data: cashAccounts = [] } = useCashAccounts();
   const { exchangeRate } = useExchangeRate();
-  const { data: snapshots = [] } = useQuery({
+  const { data: snapshots } = useQuery({
     queryKey: ['snapshots'],
     queryFn: fetchSnapshots,
   });
