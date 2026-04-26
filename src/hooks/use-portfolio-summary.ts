@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useHoldings } from './use-holdings';
 import { useAssetQuotes } from './use-asset-quotes';
 import { useCashBalance, useCashAccounts } from './use-cash';
@@ -7,12 +8,39 @@ import { calculatePortfolioSummary, toKRW } from '@/lib/calculate-portfolio';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 import type { QuoteResult } from '@/types/asset.types';
 
+interface Snapshot {
+  snapDate: string;
+  totalValue: number;
+  breakdown: { stockRatio: number; cryptoRatio: number; cashRatio: number };
+}
+
+async function fetchSnapshots(): Promise<Snapshot[]> {
+  const res = await fetch('/api/snapshots');
+  if (!res.ok) throw new Error('스냅샷을 불러오지 못했습니다');
+  return res.json();
+}
+
+function computeWeeklyReturn(snapshots: Snapshot[], currentTotalValue: number) {
+  if (!snapshots || snapshots.length < 7) return { amount: null, percent: null };
+  // snapshots[0] = most recent (today/yesterday), snapshots[6] = ~7 days ago
+  const sevenDaysAgo = snapshots[6];
+  const amount = currentTotalValue - sevenDaysAgo.totalValue;
+  const percent = sevenDaysAgo.totalValue !== 0
+    ? (amount / sevenDaysAgo.totalValue) * 100
+    : null;
+  return { amount, percent };
+}
+
 export function usePortfolioSummary() {
   const { data: holdings = [], isLoading: holdingsLoading } = useHoldings();
   const { data: quoteResults = [], isLoading: quotesLoading, isError, dataUpdatedAt } = useAssetQuotes(holdings);
   const { data: cashBalance = 0 } = useCashBalance();
   const { data: cashAccounts = [] } = useCashAccounts();
   const { exchangeRate } = useExchangeRate();
+  const { data: snapshots = [] } = useQuery({
+    queryKey: ['snapshots'],
+    queryFn: fetchSnapshots,
+  });
 
   const holdingsWithQuotes: HoldingWithQuote[] = useMemo(() => {
     const quoteMap = new Map<string, QuoteResult>(
@@ -29,10 +57,11 @@ export function usePortfolioSummary() {
     });
   }, [holdings, quoteResults, exchangeRate]);
 
-  const summary = useMemo(
-    () => calculatePortfolioSummary(holdingsWithQuotes, cashAccounts, cashBalance, exchangeRate),
-    [holdingsWithQuotes, cashAccounts, cashBalance, exchangeRate]
-  );
+  const summary = useMemo(() => {
+    const calculatedSummary = calculatePortfolioSummary(holdingsWithQuotes, cashAccounts, cashBalance, exchangeRate);
+    const { amount: weeklyChangeAmount, percent: weeklyChangePercent } = computeWeeklyReturn(snapshots, calculatedSummary.totalValue);
+    return { ...calculatedSummary, weeklyChangeAmount, weeklyChangePercent };
+  }, [holdingsWithQuotes, cashAccounts, cashBalance, exchangeRate, snapshots]);
 
   return {
     holdings: holdingsWithQuotes,

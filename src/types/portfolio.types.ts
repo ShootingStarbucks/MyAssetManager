@@ -80,4 +80,6 @@ export interface PortfolioSummary {
   totalReturnPercent: number | null;
   cashAccounts?: CashAccount[];  // NEW — optional for backward compat
   riskMetrics: RiskMetrics;
+  weeklyChangeAmount?: number | null;
+  weeklyChangePercent?: number | null;
 }
