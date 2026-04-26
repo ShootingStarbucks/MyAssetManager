@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { History, Pencil, Trash2 } from 'lucide-react';
+import { History, Info, Pencil, Trash2 } from 'lucide-react';
 import { useRemoveHolding, useUpdateHolding } from '@/hooks/use-holdings';
 import { AssetTypeBadge, ManualPriceBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
@@ -90,17 +90,23 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors group">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex flex-col cursor-pointer hover:opacity-75 transition-opacity" onClick={() => setShowDetailModal(true)}>
+          <div className="flex flex-col cursor-pointer group/name" onClick={() => setShowDetailModal(true)}>
             {holding.assetType === 'kr-stock' ? (
               <>
-                <span className="font-semibold text-gray-900">
-                  {getKrStockKoreanName(holding.ticker) || holding.name || quote?.name || holding.ticker}
-                </span>
-                <span className="text-xs text-gray-400">{holding.ticker}</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-gray-900 group-hover/name:text-blue-600 group-hover/name:underline transition-colors">
+                    {getKrStockKoreanName(holding.ticker) || holding.name || quote?.name || holding.ticker}
+                  </span>
+                  <Info className="w-3 h-3 text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                </div>
+                <span className="text-xs text-gray-400 group-hover/name:text-blue-400 transition-colors">{holding.ticker}</span>
               </>
             ) : (
               <>
-                <span className="font-semibold text-gray-900">{holding.ticker}</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-gray-900 group-hover/name:text-blue-600 group-hover/name:underline transition-colors">{holding.ticker}</span>
+                  <Info className="w-3 h-3 text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                </div>
                 {quote?.name && (
                   <span className="text-xs text-gray-400">{quote.name}</span>
                 )}
