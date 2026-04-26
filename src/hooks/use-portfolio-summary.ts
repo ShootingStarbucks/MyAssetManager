@@ -17,7 +17,8 @@ interface Snapshot {
 async function fetchSnapshots(): Promise<Snapshot[]> {
   const res = await fetch('/api/snapshots');
   if (!res.ok) throw new Error('스냅샷을 불러오지 못했습니다');
-  return res.json();
+  const json = await res.json();
+  return json.snapshots ?? [];
 }
 
 function computeWeeklyReturn(snapshots: Snapshot[] | undefined, currentTotalValue: number) {
