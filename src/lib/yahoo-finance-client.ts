@@ -72,3 +72,36 @@ export async function searchKrStocks(query: string): Promise<SearchResult[]> {
     return [];
   }
 }
+
+/**
+ * Fetch the closing price of a Korean stock for the nearest trading day
+ * at or before targetDate. Tries both .KS and .KQ suffixes.
+ * Looks back up to 7 days to handle weekends/holidays.
+ * @param ticker - ticker WITHOUT suffix, e.g. "005930"
+ * @param targetDate - "YYYY-MM-DD"
+ * @returns close price or null if no data available
+ */
+export async function fetchKrStockHistoricalPrice(
+  ticker: string,
+  targetDate: string
+): Promise<number | null> {
+  const to = new Date(targetDate + 'T23:59:59Z');
+  const from = new Date(targetDate + 'T00:00:00Z');
+  from.setUTCDate(from.getUTCDate() - 7);
+
+  for (const suffix of ['.KS', '.KQ']) {
+    try {
+      const rows = await yahooFinance.historical(`${ticker}${suffix}`, {
+        period1: from,
+        period2: to,
+        interval: '1d',
+      });
+      if (!rows || rows.length === 0) continue;
+      const last = rows[rows.length - 1] as HistoricalRow | undefined;
+      if (last?.close && last.close > 0) return last.close;
+    } catch {
+      // try next suffix
+    }
+  }
+  return null;
+}

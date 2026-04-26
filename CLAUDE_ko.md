@@ -162,11 +162,26 @@ Edge Runtime 제약으로 두 파일로 분리:
 - **UI 상태**: Zustand (현재는 최소 사용)
 - localStorage 없음 — 모든 보유 자산은 DB(SQLite)에 저장
 
+### AI 키 관리
+
+감성 분석 및 포트폴리오 인사이트를 위한 사용자별 Google AI (Gemini) 키:
+
+- `src/lib/crypto.ts` — `AUTH_SECRET`을 키 시드로 사용하는 AES-256-GCM 암호화/복호화. **Node.js 런타임 전용 — Edge Runtime 또는 `middleware.ts`에서 절대 import 금지.**
+- `src/lib/get-user-ai-key.ts` — DB에서 사용자 키를 로드하고 복호화. 없으면 `GOOGLE_AI_API_KEY` 환경 변수로 폴백. 공유 서버 키 일일 한도(사용자당 3회/일)를 초과하면 `ServerKeyLimitError`를 던집니다.
+- `src/app/api/settings/api-keys/route.ts` — GET (마스킹된 키 상태) / POST (Gemini API로 유효성 검증 + 암호화 + 저장) / DELETE (키 삭제).
+- `src/components/dashboard/ApiKeySettingsModal.tsx` — 대시보드 헤더의 "설정" 버튼으로 열리는 설정 모달.
+
+**키 동작 방식:**
+- 사용자 개인 키 있음 → 개인 키 사용, 사용 횟수 제한 없음.
+- 개인 키 없음 → 서버 `GOOGLE_AI_API_KEY` 사용, 사용자당 **3회/일** 제한. 매일 초기화 (`serverKeyUsageCount` + `serverKeyUsageDate` 필드로 추적, User 모델에 저장).
+- 한도 초과 시 API 라우트에서 HTTP 429 반환 + 키 등록을 유도하는 사용자 메시지 포함.
+
 ### 주요 제약
 
 - **Zod**: v3 고정 (`zod@^3`). v4는 CJS 빌드 파일 없어서 Turbopack에서 모듈 미발견 에러 발생.
 - **보유 자산 최대 20개**: Finnhub 무료 티어 60 req/min 제한 때문. `/api/holdings/route.ts`에서 강제.
 - **암호화폐 티커→CoinGecko ID 매핑**: `src/lib/coingecko-client.ts`의 `TICKER_TO_COINGECKO_ID` 맵에 없는 코인은 소문자 변환으로 fallback.
+- **`src/lib/crypto.ts`는 Node.js 전용**: Node.js 내장 `crypto` 모듈 사용. Edge Runtime(예: `middleware.ts`)에서 import하면 런타임 에러 발생.
 
 ## 환경 변수
 
@@ -176,6 +191,7 @@ DATABASE_URL="file:./prisma/dev.db"
 AUTH_SECRET="..."
 FINNHUB_API_KEY="..."       # https://finnhub.io/register (서버 전용, NEXT_PUBLIC_ 금지)
 KRX_API_KEY="..."           # https://openapi.krx.co.kr (선택 사항, 서버 전용 — 없으면 Yahoo Finance로 폴백)
+GOOGLE_AI_API_KEY="..."     # Google AI Studio 키 — 사용자 개인 키 없을 때 공유 폴백 키 (서버 전용)
 NEXT_PUBLIC_REFRESH_MS="60000"
 ```
 

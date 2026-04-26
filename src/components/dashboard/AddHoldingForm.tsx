@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAddHolding } from '@/hooks/use-holdings';
+import { useAddHolding, useHoldings } from '@/hooks/use-holdings';
 import { useTickerSearch } from '@/hooks/use-ticker-search';
 import { useAddCashAccount } from '@/hooks/use-cash';
 import { Spinner } from '@/components/ui/Spinner';
@@ -65,6 +65,8 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
   const { mutate: addHolding, isPending } = useAddHolding();
   const { data: searchResults, isFetching: isSearching } = useTickerSearch(searchQuery, assetType);
   const { mutate: addCashAccount, isPending: isCashPending } = useAddCashAccount();
+  const { data: holdings } = useHoldings();
+  const heldTickers = new Set((holdings ?? []).map((h) => h.ticker));
 
   const currentType = ASSET_TYPES.find((t) => t.value === activeTab) ?? ASSET_TYPES[0];
 
@@ -253,6 +255,9 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
                       >
                         <span className="font-medium text-gray-900">{r.ticker}</span>
                         <span className="text-gray-500 text-xs truncate">{r.name}</span>
+                        {heldTickers.has(r.ticker) && (
+                          <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">보유중</span>
+                        )}
                       </button>
                     </li>
                   ))}

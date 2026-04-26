@@ -1,11 +1,14 @@
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { formatPercent } from '@/lib/format-currency';
+import { getKrStockKoreanName } from '@/lib/kr-stock-names';
 
 type HoldingStat = { ticker: string; returnPercent: number } | null;
 
 type Props = {
   best: HoldingStat;
   worst: HoldingStat;
+  isCurrentMonth?: boolean;
+  hasFinnhubKey?: boolean;
 };
 
 function StatCard({
@@ -24,7 +27,7 @@ function StatCard({
       <p className="text-xs text-gray-500 mb-2">{label}</p>
       {stat ? (
         <>
-          <p className="text-sm font-semibold text-gray-800">{stat.ticker}</p>
+          <p className="text-sm font-semibold text-gray-800">{getKrStockKoreanName(stat.ticker) ?? stat.ticker}</p>
           <p className={`text-base font-bold mt-1 ${textColor}`}>
             {formatPercent(stat.returnPercent)}
           </p>
@@ -36,7 +39,15 @@ function StatCard({
   );
 }
 
-export function BestWorstCard({ best, worst }: Props) {
+export function BestWorstCard({ best, worst, isCurrentMonth, hasFinnhubKey }: Props) {
+  const hasData = best !== null || worst !== null;
+  const contextNote =
+    hasData
+      ? isCurrentMonth || !hasFinnhubKey
+        ? '전체 기간 수익률 기준'
+        : '해당 월 수익률 기준'
+      : null;
+
   return (
     <Card>
       <CardHeader>
@@ -57,6 +68,9 @@ export function BestWorstCard({ best, worst }: Props) {
             textColor="text-red-600"
           />
         </div>
+        {contextNote && (
+          <p className="text-xs text-gray-400 mt-3">{contextNote}</p>
+        )}
       </CardContent>
     </Card>
   );

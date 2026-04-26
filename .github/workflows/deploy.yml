@@ -3,7 +3,7 @@ name: Deploy to OCI
 on:
   pull_request:
     branches:
-      - release/**
+      - 'release/**'
     types:
       - closed
 
@@ -30,8 +30,8 @@ jobs:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          source: myasset-manager.tar.gz
-          target: ~/deploy/
+          source: "myasset-manager.tar.gz,prisma,prisma.config.ts"
+          target: ~/
 
       - name: Run deploy script via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -40,5 +40,4 @@ jobs:
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
-            cd ~/deploy
-            bash deploy.sh
+            bash ~/deploy.sh

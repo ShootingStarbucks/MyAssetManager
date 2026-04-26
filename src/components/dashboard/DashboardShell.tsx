@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { FileBarChart2, LogOut, User } from 'lucide-react';
+import { FileBarChart2, LogOut, Settings, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { AddHoldingModal } from './AddHoldingModal';
+import { ApiKeySettingsModal } from './ApiKeySettingsModal';
 import { PortfolioSummaryCard } from './PortfolioSummaryCard';
 import { PortfolioTable } from './PortfolioTable';
 import { AllocationChart } from './AllocationChart';
@@ -25,6 +26,7 @@ export function DashboardShell() {
   const { data: session } = useSession();
   const { summary } = usePortfolioSummary();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   const { data: targetData } = useQuery<{ allocations: { stock: number; crypto: number; cash: number } }>({
     queryKey: ['rebalance-targets'],
@@ -77,6 +79,13 @@ export function DashboardShell() {
               월간 리포트
             </Link>
             <button
+              onClick={() => setSettingsModalOpen(true)}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <Settings size={15} />
+              설정
+            </button>
+            <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
             >
@@ -89,9 +98,9 @@ export function DashboardShell() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* 왼쪽 패널: 요약 + 리스크 + 리밸런싱 + 자산 추가 */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-1 space-y-4 sticky top-6 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
             <PortfolioSummaryCard />
 
             <InsightCard />
@@ -176,6 +185,7 @@ export function DashboardShell() {
       </main>
     </div>
     <AddHoldingModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
+    <ApiKeySettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
     </>
   );
 }

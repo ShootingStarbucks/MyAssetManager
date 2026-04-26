@@ -15,6 +15,10 @@ model User {
   cashBalance        Float               @default(0)
   exchangeRateUSDKRW Float?
   targetAllocations  String?
+  googleAiApiKey      String?
+  finnhubApiKey       String?
+  serverKeyUsageCount Int     @default(0)
+  serverKeyUsageDate  String?
   holdings           Holding[]
   transactions       Transaction[]
   cashAccounts       CashAccount[]

@@ -24,6 +24,26 @@ const BARS = [
 ] as const;
 
 export function AssetClassPerformanceChart({ data }: Props) {
+  const total =
+    (data.byAssetClass?.stock ?? 0) +
+    (data.byAssetClass?.crypto ?? 0) +
+    (data.byAssetClass?.cash ?? 0);
+
+  if (!data.byAssetClass || total === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <h2 className="text-base font-semibold text-gray-800">자산군별 비중</h2>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+            이달 데이터가 충분하지 않습니다
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const chartData = BARS.map(({ key, label, color }) => ({
     name: label,
     value: data.byAssetClass[key],

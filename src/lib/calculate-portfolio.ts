@@ -8,6 +8,7 @@ import type {
   RiskMetrics,
   RebalanceSuggestion,
 } from '@/types/portfolio.types';
+import { getKrStockKoreanName } from '@/lib/kr-stock-names';
 
 // USD → KRW 환율 (실제 서비스에서는 환율 API 사용 권장)
 // 현재는 고정 환율 사용 (추후 실시간 환율로 대체 가능)
@@ -77,14 +78,14 @@ export function calculateConcentrationWarnings(allocations: AllocationSlice[]): 
         type: 'DANGER',
         ticker: alloc.ticker,
         ratio: alloc.percentage,
-        message: `${alloc.ticker} 비중이 ${alloc.percentage.toFixed(1)}%로 너무 높습니다 (위험)`,
+        message: `${alloc.name} 비중이 ${alloc.percentage.toFixed(1)}%로 너무 높습니다 (위험)`,
       });
     } else if (alloc.ticker && alloc.percentage > 30) {
       warnings.push({
         type: 'WARNING',
         ticker: alloc.ticker,
         ratio: alloc.percentage,
-        message: `${alloc.ticker} 비중이 ${alloc.percentage.toFixed(1)}%입니다 (주의)`,
+        message: `${alloc.name} 비중이 ${alloc.percentage.toFixed(1)}%입니다 (주의)`,
       });
     }
   }
@@ -229,8 +230,13 @@ export function calculatePortfolioSummary(
       shadeCounters.cash += 1;
     }
 
+    const name =
+      h.assetType === 'kr-stock'
+        ? (getKrStockKoreanName(h.ticker) ?? h.name ?? h.quote?.name ?? h.ticker)
+        : (h.name ?? h.quote?.name ?? h.ticker);
     return {
       ticker: h.ticker,
+      name,
       assetType: h.assetType,
       value,
       percentage: totalValue > 0 ? (value / totalValue) * 100 : 0,
@@ -252,8 +258,13 @@ export function calculatePortfolioSummary(
       color = CASH_SHADES[shadeCounters.cash % 5];
       shadeCounters.cash += 1;
     }
+    const name =
+      h.assetType === 'kr-stock'
+        ? (getKrStockKoreanName(h.ticker) ?? h.name ?? h.ticker)
+        : (h.name ?? h.ticker);
     allocations.push({
       ticker: h.ticker,
+      name,
       assetType: h.assetType,
       value,
       percentage: totalValue > 0 ? (value / totalValue) * 100 : 0,
@@ -265,6 +276,7 @@ export function calculatePortfolioSummary(
   if (cashForTotal > 0) {
     allocations.push({
       ticker: '현금',
+      name: '현금',
       assetType: 'cash',
       value: cashForTotal,
       percentage: totalValue > 0 ? (cashForTotal / totalValue) * 100 : 0,

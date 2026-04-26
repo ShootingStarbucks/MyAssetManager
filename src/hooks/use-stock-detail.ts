@@ -7,7 +7,14 @@ async function fetchStockDetail(holdingId: string): Promise<StockDetailResult> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ holdingId }),
   });
-  if (!res.ok) throw new Error('감성 분석 데이터를 불러오지 못했습니다');
+  if (!res.ok) {
+    if (res.status === 429) {
+      const body = await res.json().catch(() => ({}));
+      const errBody = body as { error?: string };
+      throw new Error(errBody.error ?? '잠시 후 다시 시도해주세요.');
+    }
+    throw new Error('감성 분석 데이터를 불러오지 못했습니다');
+  }
   return res.json();
 }
 
