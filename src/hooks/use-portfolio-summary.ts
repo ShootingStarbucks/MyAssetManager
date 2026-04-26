@@ -14,11 +14,10 @@ interface Snapshot {
   breakdown: { stockRatio: number; cryptoRatio: number; cashRatio: number };
 }
 
-async function fetchSnapshots(): Promise<Snapshot[]> {
+async function fetchSnapshots(): Promise<{ snapshots: Snapshot[] }> {
   const res = await fetch('/api/snapshots');
   if (!res.ok) throw new Error('스냅샷을 불러오지 못했습니다');
-  const json = await res.json();
-  return json.snapshots ?? [];
+  return res.json();
 }
 
 function computeWeeklyReturn(snapshots: Snapshot[] | undefined, currentTotalValue: number) {
@@ -38,10 +37,12 @@ export function usePortfolioSummary() {
   const { data: cashBalance = 0 } = useCashBalance();
   const { data: cashAccounts = [] } = useCashAccounts();
   const { exchangeRate } = useExchangeRate();
-  const { data: snapshots } = useQuery({
+  const { data: snapshotsData } = useQuery<{ snapshots: Snapshot[] }>({
     queryKey: ['snapshots'],
     queryFn: fetchSnapshots,
+    staleTime: 5 * 60 * 1000,
   });
+  const snapshots = snapshotsData?.snapshots;
 
   const holdingsWithQuotes: HoldingWithQuote[] = useMemo(() => {
     const quoteMap = new Map<string, QuoteResult>(
