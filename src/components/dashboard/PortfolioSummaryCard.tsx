@@ -67,10 +67,19 @@ export function PortfolioSummaryCard() {
               </div>
             )}
 
-            <div className="flex items-center gap-2 mb-3">
-              <ChangeBadge value={summary.totalChange} suffix="원" />
-              <ChangeBadge value={summary.totalChangePercent} />
-              <span className="text-xs text-gray-400">전일 대비</span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+              <div className="flex items-center gap-2">
+                <ChangeBadge value={summary.totalChange} suffix="원" />
+                <ChangeBadge value={summary.totalChangePercent} />
+                <span className="text-xs text-gray-400">전일 대비</span>
+              </div>
+              {summary.weeklyChangePercent != null && summary.weeklyChangeAmount != null && (
+                <div className="flex items-center gap-2">
+                  <ChangeBadge value={summary.weeklyChangeAmount} suffix="원" />
+                  <ChangeBadge value={summary.weeklyChangePercent} />
+                  <span className="text-xs text-gray-400">1주</span>
+                </div>
+              )}
             </div>
             {/* 현금/예금 잔액 */}
             <div className="flex items-center justify-between py-2 border-t border-gray-100 mt-2">
