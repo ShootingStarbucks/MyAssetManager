@@ -101,6 +101,14 @@ Types: `feat` | `fix` | `test` | `chore` | `refactor` | `docs` | `style`
    - Stage only the files belonging to that unit; do not bulk-add unrelated files
 4. Stop after all commits are made — do NOT merge or push. Wait for user to confirm before merging.
 
+**Release versioning — auto version bump:**
+Before creating a `release/<version>` branch, always determine the next version automatically:
+1. Run `git tag --sort=-v:refname | head -1` to get the latest semver tag (e.g. `v0.1.0`).
+2. If no tag exists, fall back to the `version` field in `package.json`.
+3. Increment the **patch** number by default (e.g. `v0.1.0` → `v0.1.1`). Increment **minor** when the release includes new features; increment **major** for breaking changes.
+4. Use the resulting version for both the branch name (`release/<version>`) and the git tag (`v<version>`).
+5. Never reuse or overwrite an existing tag. If the computed version is already tagged, increment again.
+
 ## Commands
 
 ```bash
