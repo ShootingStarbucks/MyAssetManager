@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSharpeRatio } from '@/hooks/use-sharpe-ratio';
 import { Card, CardContent } from '@/components/ui/Card';
 
@@ -12,7 +13,7 @@ function getGrade(ratio: number): { label: string; color: string } {
 }
 
 function SharpeInfoModal({ onClose }: { onClose: () => void }) {
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={onClose}
@@ -72,7 +73,8 @@ function SharpeInfoModal({ onClose }: { onClose: () => void }) {
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
