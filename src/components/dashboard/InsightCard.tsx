@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
 
@@ -26,6 +26,7 @@ export function InsightCard() {
   const [error, setError] = useState<string | null>(null);
   const [copyablePrompt, setCopyablePrompt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [pasteError, setPasteError] = useState<string | null>(null);
@@ -44,6 +45,12 @@ export function InsightCard() {
       .catch(() => {
         // Silently ignore fetch errors on mount
       });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
   }, []);
 
   async function handleGenerate() {
@@ -204,7 +211,7 @@ export function InsightCard() {
                     };
                     write(copyablePrompt!).then(() => {
                       setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
+                      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
                     });
                   }}
                   className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
