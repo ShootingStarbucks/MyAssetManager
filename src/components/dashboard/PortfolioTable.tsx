@@ -56,9 +56,9 @@ export function PortfolioTable() {
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[90px]">평단가</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[100px]">현재가</th>
             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[80px]">수익률</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[90px]">평가손익</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[90px]">평가액</th>
-            <th className="px-4 py-3 min-w-[80px] w-[80px] sticky right-0 bg-white z-10" />
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[110px]">평가손익</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[110px]">평가액</th>
+            <th className="px-2 py-3 min-w-[72px] w-[72px] sticky right-0 bg-white z-10" />
           </tr>
         </thead>
         <tbody>

@@ -53,7 +53,7 @@ export function PortfolioSummaryCard() {
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-gray-500">평가손익</span>
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${summary.totalUnrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`text-sm font-medium whitespace-nowrap ${summary.totalUnrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {summary.totalUnrealizedPnL >= 0 ? '+' : ''}
                     {summary.totalUnrealizedPnL.toLocaleString('ko-KR')}원
                   </span>
@@ -85,7 +85,7 @@ export function PortfolioSummaryCard() {
             <div className="flex items-center justify-between py-2 border-t border-gray-100 mt-2">
               <span className="text-xs text-gray-500">현금/예금</span>
               <div className="flex items-center gap-1">
-                <span className="text-xs font-medium text-gray-700">
+                <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
                   {formatKRW(cashTotal)}
                 </span>
                 {cashAccounts.length > 0 && (
