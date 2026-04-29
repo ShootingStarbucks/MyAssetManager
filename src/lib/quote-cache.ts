@@ -60,21 +60,21 @@ export async function getOrFetch(
   const pending = inflight.get(key);
   if (pending) return pending;
 
-  const promise = fetcher().then(
-    (data) => {
+  const promise = fetcher()
+    .then((data) => {
       setCached(key, data, CACHE_TTL_MS);
-      inflight.delete(key);
       return data;
-    },
-    (err: NodeJS.ErrnoException) => {
-      inflight.delete(key);
+    })
+    .catch((err: NodeJS.ErrnoException) => {
       if (err.code === 'INVALID_TICKER') {
         invalidCache.set(key, Date.now() + INVALID_TTL_MS);
       }
       // NETWORK_ERROR / RATE_LIMITED 등 일시적 오류는 캐시 안 함
       throw err;
-    }
-  );
+    })
+    .finally(() => {
+      inflight.delete(key);
+    });
 
   inflight.set(key, promise);
   return promise;
