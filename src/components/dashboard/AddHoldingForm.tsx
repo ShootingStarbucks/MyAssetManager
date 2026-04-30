@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAddHolding, useHoldings } from '@/hooks/use-holdings';
 import { useTickerSearch } from '@/hooks/use-ticker-search';
 import { useAddCashAccount } from '@/hooks/use-cash';
@@ -47,6 +47,7 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
   const [quantityError, setQuantityError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showExtra, setShowExtra] = useState(false);
   const [exchange, setExchange] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
@@ -67,6 +68,12 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
   const { mutate: addCashAccount, isPending: isCashPending } = useAddCashAccount();
   const { data: holdings } = useHoldings();
   const heldTickers = new Set((holdings ?? []).map((h) => h.ticker));
+
+  useEffect(() => {
+    return () => {
+      if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
+    };
+  }, []);
 
   const currentType = ASSET_TYPES.find((t) => t.value === activeTab) ?? ASSET_TYPES[0];
 
@@ -231,7 +238,7 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
                 value={ticker}
                 onChange={handleTickerChange}
                 onFocus={() => { if (ticker) setShowDropdown(true); }}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                onBlur={() => { dropdownTimerRef.current = setTimeout(() => setShowDropdown(false), 150); }}
                 placeholder={currentType.placeholder}
                 className={`w-full px-3 py-2 pr-8 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent ${
                   tickerError
