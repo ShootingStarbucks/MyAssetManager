@@ -130,7 +130,7 @@ export function StockDetailModal({ holding, exchangeRate, onClose }: StockDetail
 
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-gray-500 mb-1">평가금액</p>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-gray-900 whitespace-nowrap">
                 {priceKRW != null ? formatKRW(priceKRW) : '—'}
               </p>
             </div>
@@ -138,7 +138,7 @@ export function StockDetailModal({ holding, exchangeRate, onClose }: StockDetail
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-gray-500 mb-1">수익금</p>
               {unrealizedPnL != null ? (
-                <p className={`text-sm font-medium ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-sm font-medium whitespace-nowrap ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {unrealizedPnL >= 0 ? '+' : ''}{formatKRW(unrealizedPnL)}
                 </p>
               ) : (

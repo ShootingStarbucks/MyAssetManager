@@ -200,7 +200,7 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
               {formatPrice(quote.price, quote.currency)}
             </div>
             {quote.currency === 'USD' && priceKRW !== null && (
-              <div className="text-xs text-gray-400">{formatKRW(priceKRW)}</div>
+              <div className="text-xs text-gray-400 whitespace-nowrap">{formatKRW(priceKRW)}</div>
             )}
           </div>
         ) : (
@@ -263,7 +263,7 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
       {/* 평가손익 */}
       <td className="px-4 py-3 text-right">
         {unrealizedPnL !== null ? (
-          <span className={`text-sm font-medium ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <span className={`text-sm font-medium whitespace-nowrap ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {unrealizedPnL >= 0 ? '+' : ''}{formatKRW(unrealizedPnL)}
           </span>
         ) : (
@@ -272,13 +272,13 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
       </td>
       <td className="px-4 py-3 text-right">
         {totalValue !== null ? (
-          <span className="text-sm font-semibold text-gray-900">{formatKRW(totalValue)}</span>
+          <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{formatKRW(totalValue)}</span>
         ) : (
           <span className="text-gray-300 text-sm">-</span>
         )}
       </td>
-      <td className="px-4 py-3 text-center sticky right-0 bg-white group-hover:bg-gray-50 transition-colors">
-        <div className="flex items-center justify-center gap-3">
+      <td className="px-2 py-3 text-center sticky right-0 bg-white group-hover:bg-gray-50 transition-colors">
+        <div className="flex items-center justify-center gap-1">
           <button
             onClick={() => setShowTxModal(true)}
             className="text-gray-400 hover:text-blue-500 transition-colors"
