@@ -34,6 +34,9 @@ cd /home/ubuntu
 npx prisma migrate deploy
 echo "✅ 마이그레이션 완료"
 
+# 기존 동명 컨테이너 제거 (중지 상태로 남아있을 경우)
+docker rm -f "${IMAGE_NAME}-${NEW_COLOR}" 2>/dev/null || true
+
 # 새 컨테이너 실행 (DB 볼륨 마운트)
 docker run -d \
   --name "${IMAGE_NAME}-${NEW_COLOR}" \
