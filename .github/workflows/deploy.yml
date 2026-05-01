@@ -27,8 +27,16 @@ jobs:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          source: "myasset-manager.tar.gz,prisma,prisma.config.ts,docker-compose.yml"
+          source: "myasset-manager.tar.gz,prisma,prisma.config.ts,docker-compose.yml,deploy.sh"
           target: ~/
+
+      - name: Make deploy script executable
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: chmod +x ~/deploy.sh
 
       - name: Run deploy script via SSH
         uses: appleboy/ssh-action@v1.0.3
