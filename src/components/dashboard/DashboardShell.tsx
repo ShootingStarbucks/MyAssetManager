@@ -110,7 +110,7 @@ export function DashboardShell() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* 왼쪽 패널: 요약 + 리스크 + 리밸런싱 + 자산 추가 */}
-          <div className="lg:col-span-1 space-y-4 sticky top-6 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
+          <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
             <div id="tour-summary-card">
               <PortfolioSummaryCard />
             </div>
