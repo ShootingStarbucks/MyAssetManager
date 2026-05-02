@@ -7,9 +7,10 @@ import { X, Eye, EyeOff, ExternalLink } from 'lucide-react';
 interface ApiKeySettingsModalProps {
   open: boolean;
   onClose: () => void;
+  onStartTour?: () => void;
 }
 
-export function ApiKeySettingsModal({ open, onClose }: ApiKeySettingsModalProps) {
+export function ApiKeySettingsModal({ open, onClose, onStartTour }: ApiKeySettingsModalProps) {
   const [hasKey, setHasKey] = useState(false);
   const [maskedKey, setMaskedKey] = useState<string | null>(null);
   const [inputKey, setInputKey] = useState('');
@@ -320,6 +321,17 @@ export function ApiKeySettingsModal({ open, onClose }: ApiKeySettingsModalProps)
             Finnhub에서 무료 키 발급
           </a>
         </div>
+
+        {onStartTour && (
+          <div className="pt-2 border-t border-gray-100">
+            <button
+              onClick={onStartTour}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              투어 다시 보기
+            </button>
+          </div>
+        )}
       </div>
     </div>,
     document.body

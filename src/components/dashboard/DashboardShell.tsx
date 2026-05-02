@@ -21,12 +21,15 @@ import { PortfolioLineChart } from './PortfolioLineChart';
 import { InsightCard } from './InsightCard';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import OnboardingTour from '@/components/dashboard/OnboardingTour';
+import { useOnboardingTour } from '@/hooks/use-onboarding-tour';
 
 export function DashboardShell() {
   const { data: session } = useSession();
   const { summary } = usePortfolioSummary();
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const { startTourManually } = useOnboardingTour();
 
   const { data: targetData } = useQuery<{ allocations: { stock: number; crypto: number; cash: number } }>({
     queryKey: ['rebalance-targets'],
@@ -57,13 +60,19 @@ export function DashboardShell() {
     });
   }
 
+  function handleTourRestart() {
+    setSettingsModalOpen(false);
+    setTimeout(() => startTourManually(), 300);
+  }
+
   const riskProfile = summary?.riskMetrics?.riskProfile ?? 'CONSERVATIVE';
 
   return (
     <>
+    <OnboardingTour />
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200">
+      <header id="tour-header" className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <h1 className="text-lg font-bold text-gray-900">내 자산 관리</h1>
           <div className="flex items-center gap-1">
@@ -79,6 +88,7 @@ export function DashboardShell() {
               월간 리포트
             </Link>
             <button
+              id="tour-settings-btn"
               onClick={() => setSettingsModalOpen(true)}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             >
@@ -101,65 +111,78 @@ export function DashboardShell() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* 왼쪽 패널: 요약 + 리스크 + 리밸런싱 + 자산 추가 */}
           <div className="lg:col-span-1 space-y-4 sticky top-6 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
-            <PortfolioSummaryCard />
+            <div id="tour-summary-card">
+              <PortfolioSummaryCard />
+            </div>
 
-            <InsightCard />
+            <div id="tour-insight-card">
+              <InsightCard />
+            </div>
 
             <ConcentrationWarningBanner
               warnings={summary?.riskMetrics?.concentrationWarnings ?? []}
             />
 
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">리스크 프로필</p>
-                <RiskGaugeChart riskProfile={riskProfile} />
-              </CardContent>
-            </Card>
+            <div id="tour-risk-panel">
+              <Card>
+                <CardContent className="pt-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">리스크 프로필</p>
+                  <RiskGaugeChart riskProfile={riskProfile} />
+                </CardContent>
+              </Card>
+            </div>
 
             <SharpeRatioCard />
 
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">자산군 비중 비교</p>
-                <RebalanceComparisonChart
-                  currentAllocations={currentAllocations}
-                  targetAllocations={targetAllocations}
-                />
-                <RebalanceSuggestionCard
-                  suggestions={[]}
-                  onSaveTargets={handleSaveTargets}
-                />
-              </CardContent>
-            </Card>
+            <div id="tour-rebalance-panel">
+              <Card>
+                <CardContent className="pt-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">자산군 비중 비교</p>
+                  <RebalanceComparisonChart
+                    currentAllocations={currentAllocations}
+                    targetAllocations={targetAllocations}
+                  />
+                  <RebalanceSuggestionCard
+                    suggestions={[]}
+                    onSaveTargets={handleSaveTargets}
+                  />
+                </CardContent>
+              </Card>
+            </div>
 
           </div>
 
           {/* 오른쪽 패널: 보유 자산 테이블 + 차트 2종 */}
           <div className="lg:col-span-2 space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-700">보유 자산</h2>
-                  <button
-                    onClick={() => setAddModalOpen(true)}
-                    className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    + 자산 추가
-                  </button>
-                </div>
-              </CardHeader>
-              <PortfolioTable />
-            </Card>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div id="tour-holdings-table">
               <Card>
                 <CardHeader>
-                  <h2 className="text-sm font-semibold text-gray-700">자산 비중</h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gray-700">보유 자산</h2>
+                    <button
+                      id="tour-add-asset-btn"
+                      onClick={() => setAddModalOpen(true)}
+                      className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      + 자산 추가
+                    </button>
+                  </div>
                 </CardHeader>
-                <CardContent className="px-2">
-                  <AllocationChart />
-                </CardContent>
+                <PortfolioTable />
               </Card>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div id="tour-chart-allocation">
+                <Card>
+                  <CardHeader>
+                    <h2 className="text-sm font-semibold text-gray-700">자산 비중</h2>
+                  </CardHeader>
+                  <CardContent className="px-2">
+                    <AllocationChart />
+                  </CardContent>
+                </Card>
+              </div>
 
               <Card>
                 <CardHeader>
@@ -185,7 +208,7 @@ export function DashboardShell() {
       </main>
     </div>
     <AddHoldingModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
-    <ApiKeySettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
+    <ApiKeySettingsModal open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} onStartTour={handleTourRestart} />
     </>
   );
 }
