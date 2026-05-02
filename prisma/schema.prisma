@@ -19,6 +19,7 @@ model User {
   finnhubApiKey       String?
   serverKeyUsageCount Int     @default(0)
   serverKeyUsageDate  String?
+  hasSeenTour         Boolean @default(false)
   holdings           Holding[]
   transactions       Transaction[]
   cashAccounts       CashAccount[]
