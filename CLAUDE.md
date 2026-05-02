@@ -108,6 +108,7 @@ Before creating a `release/<version>` branch, always determine the next version 
 3. Increment the **patch** number by default (e.g. `v0.1.0` → `v0.1.1`). Increment **minor** when the release includes new features; increment **major** for breaking changes.
 4. Use the resulting version for both the branch name (`release/<version>`) and the git tag (`v<version>`).
 5. Never reuse or overwrite an existing tag. If the computed version is already tagged, increment again.
+6. Update `README.md` to reflect the new version and any significant changes, then commit it as a separate commit before merging the release branch.
 
 ## Commands
 
