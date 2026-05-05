@@ -62,8 +62,11 @@ export function calculateUnrealizedPnL(holding: HoldingWithQuote): {
 const ASSET_CLASS_COLORS: Record<string, string> = {
   'us-stock': '#3b82f6',
   'kr-stock': '#3b82f6',
+  'us-etf': '#6366f1',
+  'kr-etf': '#6366f1',
   'crypto': '#f59e0b',
   'cash': '#10b981',
+  'real-estate': '#f97316',
 };
 
 // Re-export RebalanceSuggestion so callers can import it from this module
@@ -91,7 +94,7 @@ export function calculateConcentrationWarnings(allocations: AllocationSlice[]): 
   }
   // Asset class checks: sum stock ratio and crypto ratio
   const stockTotal = allocations
-    .filter((a) => a.assetType === 'us-stock' || a.assetType === 'kr-stock')
+    .filter((a) => a.assetType === 'us-stock' || a.assetType === 'kr-stock' || a.assetType === 'us-etf' || a.assetType === 'kr-etf')
     .reduce((s, a) => s + a.percentage, 0);
   const cryptoTotal = allocations
     .filter((a) => a.assetType === 'crypto')
@@ -120,7 +123,7 @@ export function calculateRiskProfile(allocations: AllocationSlice[]): RiskProfil
     .filter((a) => a.assetType === 'crypto')
     .reduce((s, a) => s + a.percentage, 0);
   const stockTotal = allocations
-    .filter((a) => a.assetType === 'us-stock' || a.assetType === 'kr-stock')
+    .filter((a) => a.assetType === 'us-stock' || a.assetType === 'kr-stock' || a.assetType === 'us-etf' || a.assetType === 'kr-etf')
     .reduce((s, a) => s + a.percentage, 0);
   if (cryptoTotal >= 50) return 'AGGRESSIVE';
   if (cryptoTotal >= 30 || stockTotal >= 70) return 'MODERATE';
@@ -208,11 +211,13 @@ export function calculatePortfolioSummary(
   const totalChangePercent =
     totalYesterdayValue !== 0 ? (totalChange / totalYesterdayValue) * 100 : 0;
 
-  const STOCK_SHADES  = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
-  const CRYPTO_SHADES = ['#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#fef3c7'];
-  const CASH_SHADES   = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5'];
+  const STOCK_SHADES       = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
+  const CRYPTO_SHADES      = ['#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#fef3c7'];
+  const CASH_SHADES        = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5'];
+  const ETF_SHADES         = ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'];
+  const REAL_ESTATE_SHADES = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5'];
 
-  const shadeCounters: Record<string, number> = { stock: 0, crypto: 0, cash: 0 };
+  const shadeCounters: Record<string, number> = { stock: 0, crypto: 0, cash: 0, etf: 0, realEstate: 0 };
 
   const allocations: AllocationSlice[] = validHoldings.map((h) => {
     const priceKRW = toKRW(h.quote!.price, h.quote!.currency, exchangeRate);
@@ -222,6 +227,12 @@ export function calculatePortfolioSummary(
     if (h.assetType === 'us-stock' || h.assetType === 'kr-stock') {
       color = STOCK_SHADES[shadeCounters.stock % 5];
       shadeCounters.stock += 1;
+    } else if (h.assetType === 'us-etf' || h.assetType === 'kr-etf') {
+      color = ETF_SHADES[shadeCounters.etf % 5];
+      shadeCounters.etf += 1;
+    } else if (h.assetType === 'real-estate') {
+      color = REAL_ESTATE_SHADES[shadeCounters.realEstate % 5];
+      shadeCounters.realEstate += 1;
     } else if (h.assetType === 'crypto') {
       color = CRYPTO_SHADES[shadeCounters.crypto % 5];
       shadeCounters.crypto += 1;
@@ -251,6 +262,12 @@ export function calculatePortfolioSummary(
     if (h.assetType === 'us-stock' || h.assetType === 'kr-stock') {
       color = STOCK_SHADES[shadeCounters.stock % 5];
       shadeCounters.stock += 1;
+    } else if (h.assetType === 'us-etf' || h.assetType === 'kr-etf') {
+      color = ETF_SHADES[shadeCounters.etf % 5];
+      shadeCounters.etf += 1;
+    } else if (h.assetType === 'real-estate') {
+      color = REAL_ESTATE_SHADES[shadeCounters.realEstate % 5];
+      shadeCounters.realEstate += 1;
     } else if (h.assetType === 'crypto') {
       color = CRYPTO_SHADES[shadeCounters.crypto % 5];
       shadeCounters.crypto += 1;
