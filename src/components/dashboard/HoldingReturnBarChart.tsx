@@ -12,6 +12,7 @@ import {
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 import { calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
 import { getKrStockKoreanName } from '@/lib/kr-stock-names';
+import { getKrEtfName } from '@/lib/kr-etf-names';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 
 interface ChartDataPoint {
@@ -31,6 +32,8 @@ export function HoldingReturnBarChart() {
       const name =
         h.assetType === 'kr-stock'
           ? (getKrStockKoreanName(h.ticker) ?? h.name ?? h.ticker)
+          : h.assetType === 'kr-etf'
+          ? (getKrEtfName(h.ticker) ?? h.name ?? h.ticker)
           : (h.name ?? h.ticker);
       acc.push({ ticker: h.ticker, name, pnlPercent: unrealizedPnLPercent });
       return acc;

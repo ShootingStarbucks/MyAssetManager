@@ -9,6 +9,7 @@ import type {
   RebalanceSuggestion,
 } from '@/types/portfolio.types';
 import { getKrStockKoreanName } from '@/lib/kr-stock-names';
+import { getKrEtfName } from '@/lib/kr-etf-names';
 
 // USD → KRW 환율 (실제 서비스에서는 환율 API 사용 권장)
 // 현재는 고정 환율 사용 (추후 실시간 환율로 대체 가능)
@@ -244,6 +245,8 @@ export function calculatePortfolioSummary(
     const name =
       h.assetType === 'kr-stock'
         ? (getKrStockKoreanName(h.ticker) ?? h.name ?? h.quote?.name ?? h.ticker)
+        : h.assetType === 'kr-etf'
+        ? (getKrEtfName(h.ticker) ?? h.name ?? h.quote?.name ?? h.ticker)
         : (h.name ?? h.quote?.name ?? h.ticker);
     return {
       ticker: h.ticker,
@@ -278,6 +281,8 @@ export function calculatePortfolioSummary(
     const name =
       h.assetType === 'kr-stock'
         ? (getKrStockKoreanName(h.ticker) ?? h.name ?? h.ticker)
+        : h.assetType === 'kr-etf'
+        ? (getKrEtfName(h.ticker) ?? h.name ?? h.ticker)
         : (h.name ?? h.ticker);
     allocations.push({
       ticker: h.ticker,

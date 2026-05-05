@@ -8,6 +8,7 @@ import { AssetTypeBadge, ManualPriceBadge } from '@/components/ui/Badge';
 import { formatKRW, formatPrice, formatNumber } from '@/lib/format-currency';
 import { toKRW, calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
 import { getKrStockKoreanName } from '@/lib/kr-stock-names';
+import { getKrEtfName } from '@/lib/kr-etf-names';
 import { TransactionModal } from './TransactionModal';
 import { StockDetailModal } from './StockDetailModal';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
@@ -91,11 +92,13 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex flex-col cursor-pointer group/name" onClick={() => setShowDetailModal(true)}>
-            {holding.assetType === 'kr-stock' ? (
+            {(holding.assetType === 'kr-stock' || holding.assetType === 'kr-etf') ? (
               <>
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-gray-900 group-hover/name:text-blue-600 group-hover/name:underline transition-colors">
-                    {getKrStockKoreanName(holding.ticker) || holding.name || quote?.name || holding.ticker}
+                    {(holding.assetType === 'kr-etf'
+                      ? getKrEtfName(holding.ticker)
+                      : getKrStockKoreanName(holding.ticker)) || holding.name || quote?.name || holding.ticker}
                   </span>
                   <Info className="w-3 h-3 text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity" />
                 </div>

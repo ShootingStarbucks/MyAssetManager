@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { formatPercent } from '@/lib/format-currency';
 import { getKrStockKoreanName } from '@/lib/kr-stock-names';
+import { getKrEtfName } from '@/lib/kr-etf-names';
 
 type HoldingStat = { ticker: string; returnPercent: number } | null;
 
@@ -27,7 +28,7 @@ function StatCard({
       <p className="text-xs text-gray-500 mb-2">{label}</p>
       {stat ? (
         <>
-          <p className="text-sm font-semibold text-gray-800">{getKrStockKoreanName(stat.ticker) ?? stat.ticker}</p>
+          <p className="text-sm font-semibold text-gray-800">{getKrStockKoreanName(stat.ticker) ?? getKrEtfName(stat.ticker) ?? stat.ticker}</p>
           <p className={`text-base font-bold mt-1 ${textColor}`}>
             {formatPercent(stat.returnPercent)}
           </p>

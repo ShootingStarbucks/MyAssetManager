@@ -5,6 +5,7 @@ import type { HoldingWithQuote } from '@/types/portfolio.types';
 import { formatKRW, formatPrice } from '@/lib/format-currency';
 import { toKRW, calculateUnrealizedPnL } from '@/lib/calculate-portfolio';
 import { getKrStockKoreanName } from '@/lib/kr-stock-names';
+import { getKrEtfName } from '@/lib/kr-etf-names';
 import { AssetTypeBadge } from '@/components/ui/Badge';
 import { useStockDetail } from '@/hooks/use-stock-detail';
 
@@ -19,8 +20,11 @@ export function StockDetailModal({ holding, exchangeRate, onClose }: StockDetail
   const { unrealizedPnL, unrealizedPnLPercent } = calculateUnrealizedPnL(holding);
 
   const isKrStock = holding.assetType === 'kr-stock';
+  const isKrEtf = holding.assetType === 'kr-etf';
   const displayName = isKrStock
     ? (getKrStockKoreanName(holding.ticker) || holding.name || holding.ticker)
+    : isKrEtf
+    ? (getKrEtfName(holding.ticker) || holding.name || holding.ticker)
     : holding.ticker;
   const showTicker = displayName !== holding.ticker;
 

@@ -72,6 +72,12 @@ export const KR_ETF_LIST: KrEtfEntry[] = [
   { ticker: '329200', name: 'TIGER 차이나CSI300' },
 ];
 
+const KR_ETF_MAP = new Map(KR_ETF_LIST.map((e) => [e.ticker, e.name]));
+
+export function getKrEtfName(ticker: string): string | undefined {
+  return KR_ETF_MAP.get(ticker);
+}
+
 export function searchKrEtfsByName(query: string): KrEtfEntry[] {
   const q = query.trim().toLowerCase().replace(/\s+/g, '');
   if (!q) return [];
