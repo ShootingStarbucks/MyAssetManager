@@ -8,7 +8,7 @@ import type { ApiError, SearchResult } from '@/types/api.types';
 
 const querySchema = z.object({
   q: z.string().min(1).max(50),
-  assetType: z.enum(['us-stock', 'kr-stock', 'crypto']),
+  assetType: z.enum(['us-stock', 'kr-stock', 'crypto', 'us-etf', 'kr-etf', 'real-estate']),
 });
 
 export async function GET(req: NextRequest) {
@@ -37,13 +37,14 @@ export async function GET(req: NextRequest) {
 
   let results: SearchResult[] = [];
   try {
-    if (assetType === 'us-stock') {
+    if (assetType === 'us-stock' || assetType === 'us-etf') {
       results = await searchUsStocks(q);
-    } else if (assetType === 'kr-stock') {
+    } else if (assetType === 'kr-stock' || assetType === 'kr-etf') {
       results = await searchKrxStocks(q);
-    } else {
+    } else if (assetType === 'crypto') {
       results = await searchCrypto(q);
     }
+    // real-estate: no search API, results stays []
   } catch {
     results = [];
   }

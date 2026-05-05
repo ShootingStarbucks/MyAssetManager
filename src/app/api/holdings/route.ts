@@ -11,7 +11,7 @@ const MAX_HOLDINGS = 20;
 
 const addHoldingSchema = z.object({
   ticker: z.string().min(1).max(20).transform((v: string) => v.toUpperCase().trim()),
-  assetType: z.enum(['us-stock', 'kr-stock', 'crypto']),
+  assetType: z.enum(['us-stock', 'kr-stock', 'crypto', 'us-etf', 'kr-etf', 'real-estate']),
   quantity: z.number().positive('수량은 0보다 커야 합니다'),
   avgCost: z.number().positive().optional(),
   name: z.string().max(100).optional(),
@@ -69,9 +69,10 @@ export async function POST(req: NextRequest) {
 
   // 티커 유효성 검증 (외부 API 호출)
   try {
-    if (assetType === 'us-stock') await fetchUsStockQuote(ticker);
-    else if (assetType === 'kr-stock') await fetchKrStockQuote(ticker);
-    else await fetchCryptoQuotes([ticker]);
+    if (assetType === 'us-stock' || assetType === 'us-etf') await fetchUsStockQuote(ticker);
+    else if (assetType === 'kr-stock' || assetType === 'kr-etf') await fetchKrStockQuote(ticker);
+    else if (assetType === 'crypto') await fetchCryptoQuotes([ticker]);
+    // real-estate: no external API validation
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     if (code === 'INVALID_TICKER') {
