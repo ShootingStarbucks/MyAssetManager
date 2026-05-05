@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
-import { searchUsStocks } from '@/lib/finnhub-client';
+import { searchUsStocks, searchUsEtfs } from '@/lib/finnhub-client';
 import { searchKrxStocks } from '@/lib/krx-client';
+import { searchKrStocks } from '@/lib/yahoo-finance-client';
+import { searchKrEtfsByName } from '@/lib/kr-etf-names';
 import { searchCrypto } from '@/lib/coingecko-client';
 import type { ApiError, SearchResult } from '@/types/api.types';
 
 const querySchema = z.object({
   q: z.string().min(1).max(50),
-  assetType: z.enum(['us-stock', 'kr-stock', 'crypto']),
+  assetType: z.enum(['us-stock', 'kr-stock', 'crypto', 'us-etf', 'kr-etf', 'real-estate']),
 });
 
 export async function GET(req: NextRequest) {
@@ -39,11 +41,17 @@ export async function GET(req: NextRequest) {
   try {
     if (assetType === 'us-stock') {
       results = await searchUsStocks(q);
+    } else if (assetType === 'us-etf') {
+      results = await searchUsEtfs(q);
     } else if (assetType === 'kr-stock') {
       results = await searchKrxStocks(q);
-    } else {
+    } else if (assetType === 'kr-etf') {
+      const local = searchKrEtfsByName(q);
+      results = local.length > 0 ? local : await searchKrStocks(q);
+    } else if (assetType === 'crypto') {
       results = await searchCrypto(q);
     }
+    // real-estate: no search API, results stays []
   } catch {
     results = [];
   }

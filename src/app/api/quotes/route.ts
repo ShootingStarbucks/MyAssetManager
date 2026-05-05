@@ -16,7 +16,7 @@ const requestSchema = z.object({
   holdings: z.array(
     z.object({
       ticker: z.string().min(1).max(20),
-      assetType: z.enum(['us-stock', 'kr-stock', 'crypto']),
+      assetType: z.enum(['us-stock', 'kr-stock', 'crypto', 'us-etf', 'kr-etf', 'real-estate']),
     })
   ).max(20),
 });
@@ -52,9 +52,10 @@ export async function POST(req: NextRequest) {
 
   const { holdings } = parsed.data;
 
-  const usStocks = holdings.filter((h: HoldingItem) => h.assetType === 'us-stock');
-  const krStocks = holdings.filter((h: HoldingItem) => h.assetType === 'kr-stock');
+  const usStocks = holdings.filter((h: HoldingItem) => h.assetType === 'us-stock' || h.assetType === 'us-etf');
+  const krStocks = holdings.filter((h: HoldingItem) => h.assetType === 'kr-stock' || h.assetType === 'kr-etf');
   const cryptos = holdings.filter((h: HoldingItem) => h.assetType === 'crypto');
+  const realEstates = holdings.filter((h: HoldingItem) => h.assetType === 'real-estate');
 
   const results: QuoteResult[] = [];
 
@@ -147,6 +148,11 @@ export async function POST(req: NextRequest) {
         }
       });
     }
+  }
+
+  // 부동산: 시세 없음 — 포트폴리오 계산은 avgCost fallback 사용
+  for (const h of realEstates) {
+    results.push({ ticker: h.ticker, quote: null });
   }
 
   return NextResponse.json({ results });

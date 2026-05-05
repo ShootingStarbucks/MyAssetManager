@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTransactions, useAddTransaction, useRemoveTransaction } from '@/hooks/use-transactions';
 import { formatPrice, formatNumber } from '@/lib/format-currency';
 import { getKrStockKoreanName } from '@/lib/kr-stock-names';
+import { getKrEtfName } from '@/lib/kr-etf-names';
 import { Spinner } from '@/components/ui/Spinner';
 import type { HoldingWithQuote } from '@/types/portfolio.types';
 
@@ -79,6 +80,8 @@ export function TransactionModal({ holding, onClose }: TransactionModalProps) {
             <h2 className="text-lg font-bold text-gray-900">
             {holding.assetType === 'kr-stock'
               ? (getKrStockKoreanName(holding.ticker) ?? holding.name ?? holding.ticker)
+              : holding.assetType === 'kr-etf'
+              ? (getKrEtfName(holding.ticker) ?? holding.name ?? holding.ticker)
               : (holding.name ?? holding.ticker)}{' '}
             거래 내역
           </h2>
