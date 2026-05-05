@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/auth';
 import { searchUsStocks, searchUsEtfs } from '@/lib/finnhub-client';
 import { searchKrxStocks } from '@/lib/krx-client';
+import { searchKrStocks } from '@/lib/yahoo-finance-client';
 import { searchCrypto } from '@/lib/coingecko-client';
 import type { ApiError, SearchResult } from '@/types/api.types';
 
@@ -41,8 +42,10 @@ export async function GET(req: NextRequest) {
       results = await searchUsStocks(q);
     } else if (assetType === 'us-etf') {
       results = await searchUsEtfs(q);
-    } else if (assetType === 'kr-stock' || assetType === 'kr-etf') {
+    } else if (assetType === 'kr-stock') {
       results = await searchKrxStocks(q);
+    } else if (assetType === 'kr-etf') {
+      results = await searchKrStocks(q);
     } else if (assetType === 'crypto') {
       results = await searchCrypto(q);
     }
