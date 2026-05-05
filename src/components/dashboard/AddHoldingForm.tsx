@@ -11,22 +11,28 @@ const ASSET_TYPES: { value: AssetType; label: string; placeholder: string; hint:
   { value: 'us-stock', label: '미국 주식', placeholder: 'AAPL', hint: '예: AAPL, TSLA, NVDA' },
   { value: 'kr-stock', label: '한국 주식', placeholder: '삼성전자 또는 005930', hint: '예: 삼성전자, 005930' },
   { value: 'crypto', label: '암호화폐', placeholder: 'BTC', hint: '예: BTC, ETH, SOL' },
+  { value: 'us-etf', label: '미국 ETF', placeholder: 'SPY', hint: '예: SPY, QQQ, VOO' },
+  { value: 'kr-etf', label: '한국 ETF', placeholder: 'KODEX200', hint: '예: KODEX200, TIGER미국S&P500' },
+  { value: 'real-estate', label: '부동산', placeholder: '강남 아파트', hint: '예: 강남 아파트, 투자용 오피스텔' },
 ];
 
 const EXCHANGE_OPTIONS: Record<string, string[]> = {
   'us-stock': ['NASDAQ', 'NYSE', '기타'],
   'kr-stock': ['KOSPI', 'KOSDAQ', '기타'],
   'crypto': ['Upbit', 'Bithumb', 'Binance', '기타'],
+  'us-etf': ['NYSE Arca', 'NASDAQ', '기타'],
+  'kr-etf': ['KOSPI', '기타'],
 };
 
 const CASH_ACCOUNT_TYPES = ['입출금', '정기예금', 'CMA', '적금', '기타'] as const;
 type CashAccountType = (typeof CASH_ACCOUNT_TYPES)[number];
 
 function deriveCurrency(exchange: string | undefined, assetType: string): 'KRW' | 'USD' | undefined {
-  if (!exchange) return assetType === 'us-stock' ? 'USD' : 'KRW';
+  if (assetType === 'real-estate') return 'KRW';
+  if (!exchange) return (assetType === 'us-stock' || assetType === 'us-etf') ? 'USD' : 'KRW';
   if (['KOSPI', 'KOSDAQ', 'Upbit', 'Bithumb'].includes(exchange)) return 'KRW';
-  if (['NASDAQ', 'NYSE', 'Binance'].includes(exchange)) return 'USD';
-  return assetType === 'us-stock' ? 'USD' : 'KRW';
+  if (['NASDAQ', 'NYSE', 'NYSE Arca', 'Binance'].includes(exchange)) return 'USD';
+  return (assetType === 'us-stock' || assetType === 'us-etf') ? 'USD' : 'KRW';
 }
 
 type TabType = AssetType | 'cash';
@@ -76,6 +82,7 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
   }, []);
 
   const currentType = ASSET_TYPES.find((t) => t.value === activeTab) ?? ASSET_TYPES[0];
+  const isRealEstate = activeTab === 'real-estate';
 
   function resetStockForm() {
     setTicker(''); setQuantity(''); setAvgCost(''); setSearchQuery('');
@@ -301,7 +308,7 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
               type="number"
               value={avgCost}
               onChange={(e) => setAvgCost(e.target.value)}
-              placeholder={`평단가 (${activeTab === 'us-stock' ? 'USD' : '원'}, 선택)`}
+              placeholder={`${isRealEstate ? '현재 평가액 (원' : `평단가 (${activeTab === 'us-stock' || activeTab === 'us-etf' ? 'USD' : '원'}`}, 선택)`}
               min="0"
               step="any"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -320,6 +327,7 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
 
           {showExtra && (
             <div className="space-y-3 border border-gray-100 rounded-lg p-3 bg-gray-50">
+              {!isRealEstate && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">거래소</label>
                 <select
@@ -333,6 +341,7 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
                   ))}
                 </select>
               </div>
+              )}
               <div>
                 <label className="block text-xs text-gray-500 mb-1">매수일</label>
                 <input
