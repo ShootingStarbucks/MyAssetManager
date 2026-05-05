@@ -64,6 +64,22 @@ export async function searchUsStocks(query: string): Promise<SearchResult[]> {
     .map((item) => ({ ticker: item.symbol, name: item.description }));
 }
 
+export async function searchUsEtfs(query: string): Promise<SearchResult[]> {
+  if (!API_KEY) return [];
+
+  const url = `https://finnhub.io/api/v1/search?q=${encodeURIComponent(query)}&token=${API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const items: Array<{ symbol: string; description: string; type: string }> = data.result ?? [];
+
+  return items
+    .filter((item) => item.type === 'ETP')
+    .slice(0, 8)
+    .map((item) => ({ ticker: item.symbol, name: item.description }));
+}
+
 /**
  * Fetch the closing price of a US stock for the nearest trading day
  * at or before targetDate. Looks back up to 7 days to handle weekends/holidays.

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
-import { searchUsStocks } from '@/lib/finnhub-client';
+import { searchUsStocks, searchUsEtfs } from '@/lib/finnhub-client';
 import { searchKrxStocks } from '@/lib/krx-client';
 import { searchCrypto } from '@/lib/coingecko-client';
 import type { ApiError, SearchResult } from '@/types/api.types';
@@ -37,8 +37,10 @@ export async function GET(req: NextRequest) {
 
   let results: SearchResult[] = [];
   try {
-    if (assetType === 'us-stock' || assetType === 'us-etf') {
+    if (assetType === 'us-stock') {
       results = await searchUsStocks(q);
+    } else if (assetType === 'us-etf') {
+      results = await searchUsEtfs(q);
     } else if (assetType === 'kr-stock' || assetType === 'kr-etf') {
       results = await searchKrxStocks(q);
     } else if (assetType === 'crypto') {
