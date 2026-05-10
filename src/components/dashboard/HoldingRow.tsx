@@ -89,35 +89,50 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
 
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors group">
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex flex-col cursor-pointer group/name" onClick={() => setShowDetailModal(true)}>
-            {(holding.assetType === 'kr-stock' || holding.assetType === 'kr-etf') ? (
-              <>
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold text-gray-900 group-hover/name:text-blue-600 group-hover/name:underline transition-colors">
-                    {(holding.assetType === 'kr-etf'
-                      ? getKrEtfName(holding.ticker)
-                      : getKrStockKoreanName(holding.ticker)) || holding.name || quote?.name || holding.ticker}
-                  </span>
-                  <Info className="w-3 h-3 text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity" />
-                </div>
+      <td className="px-4 py-3 max-w-[150px]">
+        <div
+          className="flex flex-col cursor-pointer group/name min-w-0"
+          onClick={() => setShowDetailModal(true)}
+        >
+          {(holding.assetType === 'kr-stock' || holding.assetType === 'kr-etf') ? (
+            <>
+              <div className="flex items-center gap-1 min-w-0">
+                <span
+                  className="font-semibold text-gray-900 group-hover/name:text-blue-600 group-hover/name:underline transition-colors truncate"
+                  title={(holding.assetType === 'kr-etf' ? getKrEtfName(holding.ticker) : getKrStockKoreanName(holding.ticker)) || holding.name || quote?.name || holding.ticker}
+                >
+                  {(holding.assetType === 'kr-etf'
+                    ? getKrEtfName(holding.ticker)
+                    : getKrStockKoreanName(holding.ticker)) || holding.name || quote?.name || holding.ticker}
+                </span>
+                <Info className="w-3 h-3 text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity flex-shrink-0" />
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-xs text-gray-400 group-hover/name:text-blue-400 transition-colors">{holding.ticker}</span>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold text-gray-900 group-hover/name:text-blue-600 group-hover/name:underline transition-colors">{holding.ticker}</span>
-                  <Info className="w-3 h-3 text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity" />
-                </div>
+                <AssetTypeBadge type={holding.assetType} />
+                {!quote && <ManualPriceBadge />}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-gray-900 group-hover/name:text-blue-600 group-hover/name:underline transition-colors">{holding.ticker}</span>
+                <Info className="w-3 h-3 text-blue-500 opacity-0 group-hover/name:opacity-100 transition-opacity flex-shrink-0" />
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
                 {quote?.name && (
-                  <span className="text-xs text-gray-400">{quote.name}</span>
+                  <span
+                    className="text-xs text-gray-400 truncate max-w-[140px]"
+                    title={quote.name}
+                  >
+                    {quote.name}
+                  </span>
                 )}
-              </>
-            )}
-          </div>
-          <AssetTypeBadge type={holding.assetType} />
-          {!quote && <ManualPriceBadge />}
+                <AssetTypeBadge type={holding.assetType} />
+                {!quote && <ManualPriceBadge />}
+              </div>
+            </>
+          )}
         </div>
       </td>
       <td className="px-4 py-3 text-right">
@@ -253,22 +268,19 @@ export function HoldingRow({ holding, isQuoteLoading, exchangeRate = 1380 }: Hol
           </div>
         )}
       </td>
-      {/* 수익률 (평균매수단가 기준) */}
-      <td className="px-4 py-3 text-right">
-        {unrealizedPnLPercent !== null ? (
-          <span className={`text-sm font-medium ${unrealizedPnLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {unrealizedPnLPercent >= 0 ? '+' : ''}{unrealizedPnLPercent.toFixed(2)}%
-          </span>
-        ) : (
-          <span className="text-gray-300">—</span>
-        )}
-      </td>
-      {/* 평가손익 */}
+      {/* 평가손익 + 수익률 */}
       <td className="px-4 py-3 text-right">
         {unrealizedPnL !== null ? (
-          <span className={`text-sm font-medium whitespace-nowrap ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {unrealizedPnL >= 0 ? '+' : ''}{formatKRW(unrealizedPnL)}
-          </span>
+          <div className="flex flex-col items-end">
+            <span className={`text-sm font-medium whitespace-nowrap ${unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {unrealizedPnL >= 0 ? '+' : ''}{formatKRW(unrealizedPnL)}
+            </span>
+            {unrealizedPnLPercent !== null && (
+              <span className={`text-xs ${unrealizedPnLPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {unrealizedPnLPercent >= 0 ? '+' : ''}{unrealizedPnLPercent.toFixed(2)}%
+              </span>
+            )}
+          </div>
         ) : (
           <span className="text-gray-300">—</span>
         )}
