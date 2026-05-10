@@ -36,6 +36,19 @@ function deriveCurrency(exchange: string | undefined, assetType: string): 'KRW' 
 }
 
 type TabType = AssetType | 'cash';
+type Category = 'stock' | 'etf' | 'crypto' | 'real-estate' | 'cash';
+
+function getCategoryFromTab(tab: TabType): Category {
+  if (tab === 'us-stock' || tab === 'kr-stock') return 'stock';
+  if (tab === 'us-etf' || tab === 'kr-etf') return 'etf';
+  if (tab === 'crypto') return 'crypto';
+  if (tab === 'real-estate') return 'real-estate';
+  return 'cash';
+}
+
+function getRegionFromTab(tab: TabType): 'us' | 'kr' {
+  return (tab === 'us-stock' || tab === 'us-etf') ? 'us' : 'kr';
+}
 
 interface AddHoldingFormProps {
   onSuccess?: () => void;
@@ -100,6 +113,25 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
     setActiveTab(tab);
     resetStockForm();
     resetCashForm();
+  }
+
+  function handleCategoryChange(category: Category) {
+    const currentRegion = getRegionFromTab(activeTab);
+    let newTab: TabType;
+    switch (category) {
+      case 'stock': newTab = currentRegion === 'kr' ? 'kr-stock' : 'us-stock'; break;
+      case 'etf': newTab = currentRegion === 'kr' ? 'kr-etf' : 'us-etf'; break;
+      case 'crypto': newTab = 'crypto'; break;
+      case 'real-estate': newTab = 'real-estate'; break;
+      case 'cash': newTab = 'cash'; break;
+    }
+    handleTabChange(newTab);
+  }
+
+  function handleRegionChange(region: 'us' | 'kr') {
+    const category = getCategoryFromTab(activeTab);
+    if (category === 'stock') handleTabChange(region === 'us' ? 'us-stock' : 'kr-stock');
+    else if (category === 'etf') handleTabChange(region === 'us' ? 'us-etf' : 'kr-etf');
   }
 
   function handleTickerChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -205,25 +237,30 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
 
   return (
     <div className="space-y-4">
-      {/* 탭 */}
+      {/* 1단계: 자산 유형 */}
       <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-        {ASSET_TYPES.map((type) => (
+        {([
+          { value: 'stock', label: '주식' },
+          { value: 'etf', label: 'ETF' },
+          { value: 'crypto', label: '암호화폐' },
+          { value: 'real-estate', label: '부동산' },
+        ] as { value: Category; label: string }[]).map((cat) => (
           <button
-            key={type.value}
+            key={cat.value}
             type="button"
-            onClick={() => handleTabChange(type.value)}
+            onClick={() => handleCategoryChange(cat.value)}
             className={`flex-1 py-2 text-sm font-medium transition-colors ${
-              activeTab === type.value
+              getCategoryFromTab(activeTab) === cat.value
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
-            {type.label}
+            {cat.label}
           </button>
         ))}
         <button
           type="button"
-          onClick={() => handleTabChange('cash')}
+          onClick={() => handleCategoryChange('cash')}
           className={`flex-1 py-2 text-sm font-medium transition-colors ${
             activeTab === 'cash'
               ? 'bg-emerald-600 text-white'
@@ -233,6 +270,26 @@ export function AddHoldingForm({ onSuccess }: AddHoldingFormProps = {}) {
           현금/예금
         </button>
       </div>
+
+      {/* 2단계: 지역 토글 (주식·ETF만) */}
+      {(getCategoryFromTab(activeTab) === 'stock' || getCategoryFromTab(activeTab) === 'etf') && (
+        <div className="flex w-fit rounded-md border border-gray-200 overflow-hidden">
+          {(['us', 'kr'] as const).map((region) => (
+            <button
+              key={region}
+              type="button"
+              onClick={() => handleRegionChange(region)}
+              className={`px-5 py-1.5 text-xs font-medium transition-colors ${
+                getRegionFromTab(activeTab) === region
+                  ? 'bg-gray-800 text-white'
+                  : 'bg-white text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              {region === 'us' ? '미국' : '한국'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* 주식/암호화폐 폼 */}
       {activeTab !== 'cash' && (
